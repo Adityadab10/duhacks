@@ -4,24 +4,34 @@ import Navbar from './components/Navbar'
 import HeroSection from './components/HeroSection'
 import CompanyLogin from "./components/company/CompanyLogin";
 import FreelancerRegister from "./components/Freelancer/FreelancerRegister";
-import Offers from "./components/company/Offers"
 import Section from './components/Section'
 import FreelancerLogin from "./components/Freelancer/FreelancerLogin"
 import FreelancerHero from "./components/Freelancer/FreelancerHero"
 import FreelancerProfile from "./components/Freelancer/FreelancerProfile"
-import CompanyDashboard from './components/company/CompanyDashboard';
 import CreateJobOpening from './components/company/CreateJob';
+import FreelancerChat from './components/ChatApp';
 
 
 function App() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const userId = urlParams.get("user") || "client123"; // Default to client123
+  const chatPartnerId = urlParams.get("partner") || "freelancer456";
   return (
     <Router>
       <Navbar/>
+      
+  
+
       <Routes>
         <Route path="/" element={
           <>
             <HeroSection/>
             <Section/>
+            <div className="app-container">
+      <h1>Freelancer Chat</h1>
+      <FreelancerChat userId={userId} chatPartnerId={chatPartnerId} />
+    </div>
+            
           </>
         } />
         <Route path="/freelancer/login" element={<FreelancerLogin />} />
