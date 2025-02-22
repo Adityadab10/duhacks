@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff, ArrowRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const CompanyLoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const navigate = useNavigate();
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -96,9 +98,12 @@ const CompanyLoginPage = () => {
           <div className="mt-6 text-center">
             <p className="text-[#567C8D]">
               New to our platform?{' '}
-              <a href="#" className="text-[#2F4156] font-semibold hover:text-[#567C8D]">
+              <button 
+                onClick={() => navigate('/company/register')}
+                className="text-[#2F4156] font-semibold hover:text-[#567C8D] cursor-pointer"
+              >
                 Create a Company Account
-              </a>
+              </button>
             </p>
           </div>
         </div>

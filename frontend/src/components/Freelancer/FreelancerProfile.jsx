@@ -1,15 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   User, Mail, Phone, MapPin, Briefcase, 
   Book, DollarSign, Globe, FileText, CheckCircle,
   X, Camera
 } from 'lucide-react';
+import { auth } from '../../firebaseConfig';
+import { useNavigate } from 'react-router-dom';
 
 const ProfileSetup = () => {
+  const navigate = useNavigate();
   const [profile, setProfile] = useState({
     basicInfo: {
-      fullName: 'John Doe',
-      email: 'john@example.com',
+      fullName: '',
+      email: '',
       phone: '',
       location: '',
       profilePicture: null
@@ -29,6 +32,56 @@ const ProfileSetup = () => {
       categories: []
     }
   });
+
+  useEffect(() => {
+    // Check if user is logged in
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (user) {
+        // Log all user information
+        console.log('Firebase User Object:', {
+          displayName: user.displayName,
+          email: user.email,
+          photoURL: user.photoURL,
+          emailVerified: user.emailVerified,
+          uid: user.uid,
+          providerData: user.providerData,
+          metadata: {
+            creationTime: user.metadata.creationTime,
+            lastSignInTime: user.metadata.lastSignInTime
+          }
+        });
+
+        // Log provider-specific data
+        user.providerData.forEach((profile, index) => {
+          console.log(`Provider ${index + 1} Data:`, {
+            providerId: profile.providerId,
+            displayName: profile.displayName,
+            email: profile.email,
+            phoneNumber: profile.phoneNumber,
+            photoURL: profile.photoURL,
+            uid: profile.uid
+          });
+        });
+
+        // Update profile with user data
+        setProfile(prev => ({
+          ...prev,
+          basicInfo: {
+            ...prev.basicInfo,
+            fullName: user.displayName || 'Update your name',
+            email: user.email || '',
+            profilePicture: user.photoURL || null
+          }
+        }));
+      } else {
+        console.log('No user is signed in');
+        navigate('/freelancer/login');
+      }
+    });
+
+    // Cleanup subscription
+    return () => unsubscribe();
+  }, [navigate]);
 
   // Calculate completion percentage
   const calculateCompletion = () => {
@@ -87,7 +140,7 @@ const ProfileSetup = () => {
             <div className="absolute -top-16 left-6">
               <div className="relative group">
                 <img
-                  src="/api/placeholder/128/128"
+                  src={profile.basicInfo.profilePicture || "/api/placeholder/128/128"}
                   alt="Profile"
                   className="w-32 h-32 rounded-full border-4 border-white object-cover"
                 />

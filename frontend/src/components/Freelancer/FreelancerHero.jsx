@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 const ScrollableCategories = ({ categories }) => {
   const scrollRef = useRef(null);
   const [showProgress, setShowProgress] = useState(false);
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   const progressOptions = [
     { label: "Just Started", value: "20%" },
@@ -81,7 +81,6 @@ const ScrollableCategories = ({ categories }) => {
     </div>
   );
 };
-import { useNavigate } from 'react-router-dom';
 
 const FreelancerDashboard = () => {
   const [activeCategory, setActiveCategory] = useState('Web Design');
