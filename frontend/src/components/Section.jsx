@@ -8,7 +8,7 @@ export default function Section() {
     };
 
     const handleCompanySignup = () => {
-      navigate('/company-login');
+      navigate('/company/login');
     };
 
     return (
