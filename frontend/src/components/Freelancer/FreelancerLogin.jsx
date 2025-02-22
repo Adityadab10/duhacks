@@ -28,7 +28,7 @@ const LoginPage = () => {
 
   return (
     <div 
-      className="min-h-screen bg-gradient-to-br from-[#2F4156] to-[#1A2A3A] text-white flex items-center justify-center"
+      className="min-h-screen bg-gradient-to-br from-[#2F4156] to-[#1A2A3A] text-black flex items-center justify-center"
       
     >
       <div className="w-full max-w-md p-4">
@@ -150,7 +150,7 @@ const LoginPage = () => {
             <p className="text-[#567C8D]">
               Don't have an account?{' '}
               <button 
-                onClick={() => navigate('/freelancer/Register')}
+                onClick={() => navigate('/freelancer/register')}
                 className="text-[#2F4156] font-semibold hover:text-[#567C8D]"
               >
                 Sign up

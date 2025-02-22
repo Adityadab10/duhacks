@@ -24,9 +24,9 @@ function App() {
             <Section/>
           </>
         } />
-        <Route path="/freelancer-login" element={<FreelancerLogin />} />
+        <Route path="/freelancer/login" element={<FreelancerLogin />} />
         <Route path="/company/login" element={<CompanyLogin />} />
-        <Route path="/freelancer/Register" element={<FreelancerRegister/>}/>
+        <Route path="/freelancer/register" element={<FreelancerRegister/>}/>
         <Route path="/freelancer/dashboard" element={<FreelancerHero />} />
         <Route path="/freelancer/profile" element={<FreelancerProfile />} />
         <Route path="/create-job" element={<CreateJobOpening />} />

@@ -5,7 +5,6 @@ import { useNavigate } from 'react-router-dom';
 const ScrollableCategories = ({ categories }) => {
   const scrollRef = useRef(null);
   const [showProgress, setShowProgress] = useState(false);
-  const navigate = useNavigate()
 
   const progressOptions = [
     { label: "Just Started", value: "20%" },
@@ -174,7 +173,7 @@ const FreelancerDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F5EEEB]">
+    <div className="min-h-screen bg-[#F5EEEB] pt-11">
       {/* Main Content */}
       <div className="container mx-auto px-6 py-8">
         <div className="grid grid-cols-4 gap-8">
@@ -244,15 +243,10 @@ const FreelancerDashboard = () => {
               <h2 className="text-xl font-bold text-[#2F4156] mb-4">Working On</h2>
               <ScrollableCategories categories={categories} />
             </div>
-            
 
             {/* Search and Sort Section */}
             <div className="flex justify-between items-center mb-4">
-            <div className='text-xl font-semibold' >
-            Browse Jobs
-
-            </div>
-
+              <div className="text-xl font-semibold">Browse Jobs</div>
               <div className="flex items-center space-x-4">
                 <div className="relative">
                   <input
@@ -262,7 +256,7 @@ const FreelancerDashboard = () => {
                     onChange={handleSearch}
                     className="pl-10 pr-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#2F4156]"
                   />
-                  <Search className="absolute left-3   top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                 </div>
                 <select
                   value={sortOption}
@@ -335,4 +329,4 @@ const FreelancerDashboard = () => {
   );
 };
 
-export default FreelancerDashboard; 
+export default FreelancerDashboard;
