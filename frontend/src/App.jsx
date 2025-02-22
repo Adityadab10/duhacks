@@ -7,6 +7,7 @@ function App() {
     <>
       <Navbar/>
       <HeroSection/>
+      {/* ..My name is Russel  */}
       <h1 className='text-3xl font-bold underline'>Hello World</h1>
     </>
   )
