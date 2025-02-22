@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import JobCard from "../components/JobCard";
-import JobForm from "../components/JobForm";
+import JobCard from "./JobCard";
+import JobForm from "./JobForm";
 
 const JobBoard = () => {
   const [jobs, setJobs] = useState([
