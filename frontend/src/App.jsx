@@ -9,13 +9,12 @@ import FreelancerLogin from "./components/Freelancer/FreelancerLogin"
 import FreelancerHero from "./components/Freelancer/FreelancerHero"
 import FreelancerProfile from "./components/Freelancer/FreelancerProfile"
 import CreateJobOpening from './components/company/CreateJob';
-import FreelancerChat from './components/ChatApp';
-
+import PeerChat from "./components/ChatApp";
 
 function App() {
   const urlParams = new URLSearchParams(window.location.search);
-  const userId = urlParams.get("user") || "client123"; // Default to client123
-  const chatPartnerId = urlParams.get("partner") || "freelancer456";
+  const userId = urlParams.get("user") || "user1";
+  const chatRoom = "room1";
   return (
     <Router>
       <Navbar/>
@@ -28,8 +27,8 @@ function App() {
             <HeroSection/>
             <Section/>
             <div className="app-container">
-      <h1>Freelancer Chat</h1>
-      <FreelancerChat userId={userId} chatPartnerId={chatPartnerId} />
+      
+      <PeerChat userId={userId} chatRoom={chatRoom} />
     </div>
             
           </>
