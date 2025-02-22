@@ -1,13 +1,100 @@
-import React, { useState } from 'react';
-import { Search, Bell, ArrowRight, User, Briefcase, Layout, Star, DollarSign } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { ChevronLeft, ChevronRight, MessageCircle, Share2, ArrowRight, Star, Search } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+
+const ScrollableCategories = ({ categories }) => {
+  const scrollRef = useRef(null);
+  const [showProgress, setShowProgress] = useState(false);
+  const navigate = useNavigate()
+
+  const progressOptions = [
+    { label: "Just Started", value: "20%" },
+    { label: "In Progress", value: "50%" },
+    { label: "Almost Done", value: "80%" },
+    { label: "Completed", value: "100%" }
+  ];
+
+  const scroll = (direction) => {
+    const container = scrollRef.current;
+    const scrollAmount = direction === 'left' ? -300 : 300;
+    container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+  };
+
+  return (
+    <div className="relative">
+      <div className="flex items-center">
+        <button 
+          onClick={() => scroll('left')}
+          className="absolute left-0 z-10 bg-white rounded-full p-1 shadow-lg"
+        >
+          <ChevronLeft className="h-5 w-5" />
+        </button>
+        
+        <div 
+          ref={scrollRef} 
+          className="flex overflow-x-hidden scroll-smooth gap-4 px-8"
+        >
+          {categories.map((category) => (
+            <div key={category.name} className="min-w-[250px] bg-white rounded-lg p-4 flex-none">
+              <div className="flex justify-between items-start mb-2">
+                <h3 className="font-medium text-[#2F4156]">{category.name}</h3>
+                <div className="flex gap-2">
+                  <button 
+                    onClick={() => setShowProgress(!showProgress)} 
+                    className="text-[#567C8D] hover:text-[#2F4156]"
+                  >
+                    <Share2 className="h-4 w-4" />
+                  </button>
+                  <button className="text-[#567C8D] hover:text-[#2F4156]">
+                    <MessageCircle className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+              
+              <div className="flex justify-between items-center">
+                <span className="text-[#567C8D]">{category.price}</span>
+                <span className="text-sm text-[#567C8D]">{category.count} jobs</span>
+              </div>
+              
+              {showProgress && (
+                <div className="mt-2">
+                  <select className="w-full p-1 text-sm border rounded">
+                    {progressOptions.map(option => (
+                      <option key={option.value} value={option.value}>
+                        {option.label} - {option.value}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+        
+        <button 
+          onClick={() => scroll('right')}
+          className="absolute right-0 z-10 bg-white rounded-full p-1 shadow-lg"
+        >
+          <ChevronRight className="h-5 w-5" />
+        </button>
+      </div>
+    </div>
+  );
+};
 
 const FreelancerDashboard = () => {
   const [activeCategory, setActiveCategory] = useState('Web Design');
+  const [currentPage, setCurrentPage] = useState(0);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortOption, setSortOption] = useState('');
 
   const categories = [
     { name: 'Web Design', price: '450$', count: '15' },
     { name: 'App Design', price: '300$', count: '8' },
     { name: 'Landing Page', price: '250$', count: '12' },
+    { name: 'Web Design', price: '450$', count: '15' },
+    { name: 'App Design', price: '300$', count: '8' },
+    { name: 'Landing Page', price: '250$', count: '12' },   
     { name: 'UI/UX', price: '400$', count: '10' }
   ];
 
@@ -16,19 +103,77 @@ const FreelancerDashboard = () => {
       title: 'Web Design Project',
       description: 'I need a web design for my company. I need the design in Figma files followed by a prototype.',
       tags: ['UI Design', 'Web Design', 'prototyping'],
-      budget: '450$'
+      budget: '450$',
+      deadline: '2025-03-01'
     },
     {
       title: 'E-commerce Website',
       description: 'Looking for an experienced web designer to create a modern e-commerce platform with responsive design.',
       tags: ['E-commerce', 'Web Design', 'Responsive'],
-      budget: '600$'
+      budget: '600$',
+      deadline: '2025-02-28'
+    },
+    {
+      title: 'Web Design Project',
+      description: 'I need a web design for my company. I need the design in Figma files followed by a prototype.',
+      tags: ['UI Design', 'Web Design', 'prototyping'],
+      budget: '450$',
+      deadline: '2025-03-05'
+    },
+    {
+      title: 'E-commerce Website',
+      description: 'Looking for an experienced web designer to create a modern e-commerce platform with responsive design.',
+      tags: ['E-commerce', 'Web Design', 'Responsive'],
+      budget: '600$',
+      deadline: '2025-03-10'
+    },
+    {
+      title: 'Web Design Project',
+      description: 'I need a web design for my company. I need the design in Figma files followed by a prototype.',
+      tags: ['UI Design', 'Web Design', 'prototyping'],
+      budget: '450$',
+      deadline: '2025-03-15'
+    },
+    {
+      title: 'E-commerce Website',
+      description: 'Looking for an experienced web designer to create a modern e-commerce platform with responsive design.',
+      tags: ['E-commerce', 'Web Design', 'Responsive'],
+      budget: '600$',
+      deadline: '2025-03-20'
     }
   ];
 
+  const projectsPerPage = 3;
+  const totalPages = Math.ceil(projects.length / projectsPerPage);
+  
+  const getCurrentPageProjects = () => {
+    const start = currentPage * projectsPerPage;
+    const end = start + projectsPerPage;
+    return projects.slice(start, end);
+  };
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages - 1) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const handlePrevPage = () => {
+    if (currentPage > 0) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  const handleSearch = (e) => {
+    setSearchTerm(e.target.value);
+  };
+
+  const handleSortChange = (e) => {
+    setSortOption(e.target.value);
+  };
+
   return (
     <div className="min-h-screen bg-[#F5EEEB]">
-
       {/* Main Content */}
       <div className="container mx-auto px-6 py-8">
         <div className="grid grid-cols-4 gap-8">
@@ -41,7 +186,7 @@ const FreelancerDashboard = () => {
                 </div>
                 <h2 className="text-xl font-bold text-[#2F4156]">John Smith</h2>
                 <p className="text-[#567C8D] mb-4">Senior Web Developer</p>
-                <button className="bg-[#2F4156] text-white px-4 py-2 rounded-md hover:bg-[#567C8D] transition-colors w-full">
+                <button onClick={navigate('/clients/profile')} className="bg-[#2F4156] text-white px-4 py-2 rounded-md hover:bg-[#567C8D] transition-colors w-full">
                   View Profile
                 </button>
               </div>
@@ -64,6 +209,27 @@ const FreelancerDashboard = () => {
                   </div>
                 </div>
               </div>
+
+              {/* Statistics Section */}
+              <div className="bg-white rounded-lg p-6 shadow-lg mt-8">
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[#567C8D]">Total Applications</span>
+                    <span className="font-bold text-[#2F4156]">50</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-[#567C8D]">Hired Jobs</span>
+                    <span className="font-bold text-[#2F4156]">20</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-[#567C8D]">Completion Rate</span>
+                    <span className="font-bold text-[#2F4156]">80%</span>
+                  </div>
+                  <button className="bg-[#2F4156] text-white px-4 py-2 rounded-md hover:bg-[#567C8D] transition-colors w-full">
+                    Track All Applications
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -72,33 +238,44 @@ const FreelancerDashboard = () => {
             {/* Working On Section */}
             <div>
               <h2 className="text-xl font-bold text-[#2F4156] mb-4">Working On</h2>
-              <div className="grid grid-cols-4 gap-4">
-                {categories.map((category) => (
-                  <div
-                    key={category.name}
-                    className={`bg-white rounded-lg p-4 cursor-pointer transition-all ${
-                      activeCategory === category.name ? 'ring-2 ring-[#2F4156]' : ''
-                    }`}
-                    onClick={() => setActiveCategory(category.name)}
-                  >
-                    <h3 className="font-medium text-[#2F4156]">{category.name}</h3>
-                    <div className="flex justify-between items-center mt-2">
-                      <span className="text-[#567C8D]">{category.price}</span>
-                      <span className="text-sm text-[#567C8D]">{category.count} jobs</span>
-                    </div>
-                  </div>
-                ))}
+              <ScrollableCategories categories={categories} />
+            </div>
+            
+
+            {/* Search and Sort Section */}
+            <div className="flex justify-between items-center mb-4">
+            <div className='text-xl font-semibold' >
+            Browse Jobs
+
+            </div>
+
+              <div className="flex items-center space-x-4">
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Search by company or title"
+                    value={searchTerm}
+                    onChange={handleSearch}
+                    className="pl-10 pr-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#2F4156]"
+                  />
+                  <Search className="absolute left-3   top-1/2 transform -translate-y-1/2 text-gray-400" />
+                </div>
+                <select
+                  value={sortOption}
+                  onChange={handleSortChange}
+                  className="py-2 px-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#2F4156]"
+                >
+                  <option value="">Sort By</option>
+                  <option value="deadline">Deadline</option>
+                  <option value="price">Price</option>
+                </select>
               </div>
             </div>
 
             {/* Browse Projects */}
             <div>
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-[#2F4156]">Browse Projects</h2>
-                <button className="text-[#567C8D] hover:text-[#2F4156]">View All</button>
-              </div>
               <div className="space-y-4">
-                {projects.map((project, index) => (
+                {getCurrentPageProjects().map((project, index) => (
                   <div key={index} className="bg-white rounded-lg p-6 shadow-lg">
                     <div className="flex justify-between items-start mb-4">
                       <h3 className="text-lg font-medium text-[#2F4156]">{project.title}</h3>
@@ -120,6 +297,32 @@ const FreelancerDashboard = () => {
                   </div>
                 ))}
               </div>
+              
+              {/* Pagination Controls */}
+              <div className="flex justify-between mt-6">
+                <button
+                  onClick={handlePrevPage}
+                  disabled={currentPage === 0}
+                  className={`flex items-center px-4 py-2 rounded-md ${
+                    currentPage === 0
+                      ? 'text-gray-400 cursor-not-allowed'
+                      : 'text-[#2F4156] hover:bg-[#C8D9E6]'
+                  }`}
+                >
+                  <ChevronLeft className="h-5 w-5 mr-2" /> Previous
+                </button>
+                <button
+                  onClick={handleNextPage}
+                  disabled={currentPage === totalPages - 1}
+                  className={`flex items-center px-4 py-2 rounded-md ${
+                    currentPage === totalPages - 1
+                      ? 'text-gray-400 cursor-not-allowed'
+                      : 'text-[#2F4156] hover:bg-[#C8D9E6]'
+                  }`}
+                >
+                  Next <ChevronRight className="h-5 w-5 ml-2" />
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -128,4 +331,4 @@ const FreelancerDashboard = () => {
   );
 };
 
-export default FreelancerDashboard;
+export default FreelancerDashboard; 
