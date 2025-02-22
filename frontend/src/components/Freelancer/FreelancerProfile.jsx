@@ -7,7 +7,7 @@ import {
 import { auth } from '../../firebaseConfig';
 import { useNavigate } from 'react-router-dom';
 
-const ProfileSetup = ({ isNewUser = false }) => {
+const FreelancerProfile = ({ isNewUser = false }) => {
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(isNewUser);
   const [editingSections, setEditingSections] = useState({});

@@ -1,13 +1,27 @@
-import { useState, useEffect } from "react";
-import { io } from "socket.io-client";
+import React, { useEffect, useState } from 'react';
+import io from 'socket.io-client';
 
-const socket = io("http://localhost:4000");
-
-export default function ChatApp({ userId, chatRoom }) {
+const PeerChat = ({ userId, chatRoom }) => {
+  const [socket, setSocket] = useState(null);
+  const [error, setError] = useState(null);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
 
   useEffect(() => {
+    const socket = io('http://localhost:4000', {
+      transports: ['websocket', 'polling'],
+    });
+
+    socket.on('connect', () => {
+      console.log('Connected to WebSocket server');
+      setSocket(socket);
+    });
+
+    socket.on('connect_error', (err) => {
+      console.error('Connection error:', err);
+      setError('Failed to connect to WebSocket server');
+    });
+
     socket.emit("joinRoom", chatRoom);
 
     socket.on("message", (message) => {
@@ -15,7 +29,7 @@ export default function ChatApp({ userId, chatRoom }) {
     });
 
     return () => {
-      socket.off("message");
+      socket.disconnect();
     };
   }, [chatRoom]);
 
@@ -30,6 +44,10 @@ export default function ChatApp({ userId, chatRoom }) {
       setInput("");
     }
   };
+
+  if (error) {
+    return <div className="error">{error}</div>;
+  }
 
   return (
     <div className="flex flex-col max-w-md mx-auto p-4 border rounded-lg shadow-lg">
@@ -63,4 +81,6 @@ export default function ChatApp({ userId, chatRoom }) {
       </div>
     </div>
   );
-}
+};
+
+export default PeerChat;
