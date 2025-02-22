@@ -11,6 +11,8 @@ import FreelancerProfile from "./components/Freelancer/FreelancerProfile"
 import CreateJobOpening from './components/company/CreateJob';
 import PeerChat from "./components/ChatApp";
 import CompanyRegistration from "./components/company/CompanyRegistration";
+import CompanyDashboard from "./components/company/CompanyDashboard"
+import JobBoard from './components/company/JobBoard';
 
 
 function App() {
@@ -40,7 +42,7 @@ function App() {
         <Route path="/freelancer/register" element={<FreelancerRegister/>}/>
         <Route path="/freelancer/dashboard" element={<FreelancerHero />} />
         <Route path="/freelancer/profile" element={<FreelancerProfile />} />
-        <Route path="/company/dashboard" element={<CDash />} />
+        <Route path="/company/dashboard" element={<CompanyDashboard />} />
         <Route path="/company/jobs" element={<JobBoard />} />
         <Route path="/company/register" element={<CompanyRegistration />} />
         <Route path="/create-job" element={<CreateJobOpening />} />

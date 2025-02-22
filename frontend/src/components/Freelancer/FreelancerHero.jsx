@@ -5,10 +5,7 @@ import { useNavigate } from 'react-router-dom';
 const ScrollableCategories = ({ categories }) => {
   const scrollRef = useRef(null);
   const [showProgress, setShowProgress] = useState(false);
-<<<<<<< HEAD
   const navigate = useNavigate();
-=======
->>>>>>> b053b25025e703f25891713d5d105351320ebd47
 
   const progressOptions = [
     { label: "Just Started", value: "20%" },
