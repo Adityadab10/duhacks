@@ -11,6 +11,8 @@ import FreelancerProfile from "./components/Freelancer/FreelancerProfile"
 import CreateJobOpening from './components/company/CreateJob';
 import PeerChat from "./components/ChatApp";
 import CompanyRegistration from "./components/company/CompanyRegistration";
+import CDash from "./components/company/CompanyDashboard";
+import JobBoard from "./components/company/JobBoard";
 
 
 function App() {
