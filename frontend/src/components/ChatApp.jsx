@@ -3,15 +3,13 @@ import { io } from "socket.io-client";
 
 const socket = io("http://localhost:4000");
 
-export default function FreelancerChat({ userId, chatPartnerId }) {
+export default function ChatApp({ userId, chatRoom }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
 
   useEffect(() => {
-    // Join a unique chat room between client & freelancer
-    socket.emit("joinRoom", { userId, chatPartnerId });
+    socket.emit("joinRoom", chatRoom);
 
-    // Listen for incoming messages
     socket.on("message", (message) => {
       setMessages((prev) => [...prev, message]);
     });
@@ -19,17 +17,16 @@ export default function FreelancerChat({ userId, chatPartnerId }) {
     return () => {
       socket.off("message");
     };
-  }, [userId, chatPartnerId]);
+  }, [chatRoom]);
 
   const sendMessage = () => {
     if (input.trim()) {
       const messageData = {
         sender: userId,
-        receiver: chatPartnerId,
         content: input,
         timestamp: new Date().toISOString(),
       };
-      socket.emit("message", messageData);
+      socket.emit("message", { room: chatRoom, message: messageData });
       setInput("");
     }
   };
@@ -38,8 +35,15 @@ export default function FreelancerChat({ userId, chatPartnerId }) {
     <div className="flex flex-col max-w-md mx-auto p-4 border rounded-lg shadow-lg">
       <div className="h-64 overflow-y-auto border-b mb-4 p-2">
         {messages.map((msg, index) => (
-          <div key={index} className={`p-1 border-b ${msg.sender === userId ? 'text-right' : 'text-left'}`}>
-            <strong>{msg.sender === userId ? "You" : "Freelancer"}:</strong> {msg.content}
+          <div
+            key={index}
+            className={`p-2 my-1 rounded-lg ${
+              msg.sender === userId
+                ? "bg-blue-500 text-white self-end text-right"
+                : "bg-gray-300 text-black self-start text-left"
+            }`}
+          >
+            <strong>{msg.sender === userId ? "You" : "Stranger"}:</strong> {msg.content}
           </div>
         ))}
       </div>
