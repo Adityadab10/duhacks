@@ -10,7 +10,8 @@ function App() {
     <Router>
       <Navbar/>
       <HeroSection/>
-    </>
+      
+    </Router>
   )
 }
 
