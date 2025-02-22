@@ -3,8 +3,6 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import Navbar from './components/Navbar'
 import HeroSection from './components/HeroSection'
 import CDash from "./components/CDash";
-import JobBoard from "./components/company/JobBoard";
-
 
 
 import Section from './components/Section'
