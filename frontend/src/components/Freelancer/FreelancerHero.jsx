@@ -188,7 +188,7 @@ const FreelancerDashboard = () => {
                 </div>
                 <h2 className="text-xl font-bold text-[#2F4156]">John Smith</h2>
                 <p className="text-[#567C8D] mb-4">Senior Web Developer</p>
-                <button onClick={navigate('/clients/profile')} 
+                <button  
                   onClick={() => navigate('/freelancer/profile')}
                   className="bg-[#2F4156] text-white px-4 py-2 rounded-md hover:bg-[#567C8D] transition-colors w-full"
                 >
