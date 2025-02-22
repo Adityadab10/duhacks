@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useRef, useState } from 'react';
 import { Eye, EyeOff, ArrowRight, Building2, Mail, Briefcase, Lock, Globe } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { auth, provider, signInWithPopup } from "../../firebaseConfig";
@@ -64,6 +64,7 @@ const CompanyRegistration = () => {
     setLoading(true);
 
     try {
+      // Validate form
       if (!validateForm()) {
         setLoading(false);
         return;
@@ -91,10 +92,12 @@ const CompanyRegistration = () => {
         throw new Error(data.message || 'Registration failed');
       }
 
-      localStorage.setItem("companyToken", data.token);
-      localStorage.setItem("companyData", JSON.stringify(data.company));
+      // Store token and user data
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("userData", JSON.stringify(data.company));
 
-      navigate("/company/hero");
+      // Redirect to dashboard
+      navigate("/company/dashboard");
     } catch (error) {
       console.error("Registration error:", error);
       alert(error.message || "Registration failed. Please try again.");

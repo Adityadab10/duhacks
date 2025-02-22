@@ -1,7 +1,8 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Navbar from './components/Navbar';
-import HeroSection from './components/HeroSection';
+import React from 'react'
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { ChatProvider } from './context/ChatContext';
+import Navbar from './components/Navbar'
+import HeroSection from './components/HeroSection'
 import CompanyLogin from "./components/company/CompanyLogin";
 import FreelancerRegister from "./components/Freelancer/FreelancerRegister";
 import Section from './components/Section';
@@ -22,9 +23,10 @@ function App() {
   const chatRoom = "room1";
   
   return (
-    <Router>
+    <ChatProvider>
+      <Router>
       <div className="min-h-screen flex flex-col">
-        <Navbar />
+          <Navbar />
         <main className="flex-grow">
           <Routes>
             <Route path="/" element={
@@ -51,7 +53,8 @@ function App() {
         </main>
       </div>
     </Router>
-  );
+    </ChatProvider>
+  )
 }
 
 export default App;

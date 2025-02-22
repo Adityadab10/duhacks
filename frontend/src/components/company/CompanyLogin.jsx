@@ -1,16 +1,16 @@
-import React, { useState } from 'react';
-import { Eye, EyeOff, ArrowRight, Loader, Building2, Key } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Eye, EyeOff, ArrowRight, Building2, Mail, Briefcase, Key, Lock, Globe } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const CompanyLogin = () => {
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [loginMethod, setLoginMethod] = useState('token'); // 'token' or 'credentials'
-  const [formData, setFormData] = useState({
-    token: '',
-    email: '',
-    password: ''
-  });
+  const [loginMethod, setLoginMethod] = useState('token');
   const navigate = useNavigate();
+  
+  const tokenRef = useRef();
+  const emailRef = useRef();
+  const passwordRef = useRef();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -18,20 +18,21 @@ const CompanyLogin = () => {
 
     try {
       if (loginMethod === 'token') {
-        // Get stored company data
+        const token = tokenRef.current.value;
         const storedToken = localStorage.getItem('companyToken');
         const storedData = JSON.parse(localStorage.getItem('companyData') || '{}');
 
-        if (formData.token === storedToken) {
-          // Token matches, proceed with login
+        if (token === storedToken) {
           navigate('/company/hero');
         } else {
           alert('Invalid company token. Please try again.');
         }
       } else {
-        // Handle credential-based login
+        const email = emailRef.current.value;
+        const password = passwordRef.current.value;
         const storedData = JSON.parse(localStorage.getItem('companyData') || '{}');
-        if (storedData.email === formData.email && storedData.password === formData.password) {
+        
+        if (storedData.email === email && storedData.password === password) {
           localStorage.setItem('companyToken', storedData.token);
           navigate('/company/hero');
         } else {
@@ -46,17 +47,16 @@ const CompanyLogin = () => {
     }
   };
 
-  const InputField = ({ icon: Icon, type, placeholder, value, onChange }) => (
+  const InputField = ({ icon: Icon, type, placeholder, inputRef }) => (
     <div className="relative">
       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
         <Icon className="h-5 w-5 text-gray-400" />
       </div>
       <input
+        ref={inputRef}
         type={type}
         className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
         placeholder={placeholder}
-        value={value}
-        onChange={onChange}
         disabled={loading}
         required
       />
@@ -72,7 +72,6 @@ const CompanyLogin = () => {
         </div>
 
         <div className="p-6 space-y-6">
-          {/* Login Method Toggle */}
           <div className="flex rounded-lg bg-gray-100 p-1">
             <button
               onClick={() => setLoginMethod('token')}
@@ -99,68 +98,57 @@ const CompanyLogin = () => {
           <form onSubmit={handleSubmit} className="space-y-4">
             {loginMethod === 'token' ? (
               <InputField
-                icon={Key}
+                icon={Building2}
                 type="text"
-                placeholder="Enter Company Token"
-                value={formData.token}
-                onChange={(e) => setFormData({ ...formData, token: e.target.value })}
+                placeholder="Enter your company token"
+                inputRef={tokenRef}
               />
             ) : (
               <>
                 <InputField
                   icon={Building2}
                   type="email"
-                  placeholder="Company Email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  placeholder="Email address"
+                  inputRef={emailRef}
                 />
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Key className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    type="password"
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                    placeholder="Password"
-                    value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    disabled={loading}
-                    required
-                  />
-                </div>
+                <InputField
+                  icon={Key}
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Password"
+                  inputRef={passwordRef}
+                />
               </>
             )}
 
             <button
               type="submit"
               disabled={loading}
-              className={`w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
-                loading ? 'opacity-75 cursor-not-allowed' : ''
-              }`}
+              className="w-full flex justify-center items-center px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium rounded-lg hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
             >
               {loading ? (
-                <Loader className="animate-spin h-5 w-5" />
+                <span className="flex items-center">
+                  Loading...
+                </span>
               ) : (
-                <>
-                  Login
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </>
+                <span className="flex items-center">
+                  Login <ArrowRight className="ml-2 h-5 w-5" />
+                </span>
               )}
             </button>
+            
+            {/* Registration Link */}
+            <div className="mt-4 text-center">
+              <p className="text-gray-600">
+                Don't have an account?{" "}
+                <a
+                  href="/company/register"
+                  className="text-blue-600 hover:text-blue-700 font-medium transition-colors duration-300"
+                >
+                  Register here
+                </a>
+              </p>
+            </div>
           </form>
-
-          <div className="text-center">
-            <p className="text-sm text-gray-600">
-              Don't have an account?{' '}
-              <button
-                onClick={() => navigate('/company/register')}
-                className="font-medium text-blue-600 hover:text-blue-500"
-                disabled={loading}
-              >
-                Register your company
-              </button>
-            </p>
-          </div>
         </div>
       </div>
     </div>

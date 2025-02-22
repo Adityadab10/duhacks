@@ -37,29 +37,6 @@ const FreelancerProfile = ({ isNewUser = false }) => {
     }
   });
 
-  useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      if (user) {
-        console.log('User data:', user);
-        // Update profile with user data
-        setProfile(prev => ({
-          ...prev,
-          basicInfo: {
-            ...prev.basicInfo,
-            fullName: user.displayName || 'Update your name',
-            email: user.email || '',
-            profilePicture: user.photoURL || null
-          }
-        }));
-      } else {
-        // Redirect to login if not authenticated
-        navigate('/freelancer/login');
-      }
-    });
-
-    return () => unsubscribe();
-  }, [navigate]);
-
   const calculateCompletion = () => {
     let completed = 0;
     let total = 0;
