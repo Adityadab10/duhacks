@@ -41,11 +41,6 @@
                 width={600}
                 height={600}
               />
-              <div className="absolute -right-4 -bottom-4 bg-white text-[#2F4156] p-4 rounded-lg shadow-xl z-20">
-                <p className="font-bold">Latest Project</p>
-                <p className="text-sm">Web Design for Tech Startup</p>
-                <p className="text-xs text-gray-500 mt-1">$5,000 - Posted 2h ago</p>
-              </div>
             </div>
           </div>
         </div>
