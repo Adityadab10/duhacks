@@ -30,9 +30,6 @@ const JobBoard = () => {
         ))}
       </div>
 
-      <div className="max-w-2xl mx-auto">
-        <JobForm addJob={addJob} />
-      </div>
     </div>
   );
 };

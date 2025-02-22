@@ -218,7 +218,7 @@ const FreelancerRegistration = () => {
             <p className="text-center mt-8 text-gray-600 text-lg">
               Already have an account?{' '}
               <button 
-                onClick={() => navigate('/freelancer-login')}
+                onClick={() => navigate('/freelancer/login')}
                 className="text-blue-600 hover:text-blue-700 font-medium ml-1"
               >
                 Sign in

@@ -4,7 +4,7 @@ export default function Section() {
     const navigate = useNavigate();
 
     const handleFreelancerSignup = () => {
-      navigate('/freelancer-login');
+      navigate('/freelancer/login');
     };
 
     const handleCompanySignup = () => {
