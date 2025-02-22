@@ -7,16 +7,11 @@ import {
 import { auth } from '../../firebaseConfig';
 import { useNavigate } from 'react-router-dom';
 
-<<<<<<< HEAD
-const ProfileSetup = () => {
-  const navigate = useNavigate();
-=======
 const ProfileSetup = ({ isNewUser = false }) => {
   const [isEditing, setIsEditing] = useState(isNewUser);
   const [editingSections, setEditingSections] = useState({});
   const [showConfirmation, setShowConfirmation] = useState(false);
   
->>>>>>> b053b25025e703f25891713d5d105351320ebd47
   const [profile, setProfile] = useState({
     basicInfo: {
       fullName: '',
@@ -41,60 +36,6 @@ const ProfileSetup = ({ isNewUser = false }) => {
     }
   });
 
-<<<<<<< HEAD
-  useEffect(() => {
-    // Check if user is logged in
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      if (user) {
-        // Log all user information
-        console.log('Firebase User Object:', {
-          displayName: user.displayName,
-          email: user.email,
-          photoURL: user.photoURL,
-          emailVerified: user.emailVerified,
-          uid: user.uid,
-          providerData: user.providerData,
-          metadata: {
-            creationTime: user.metadata.creationTime,
-            lastSignInTime: user.metadata.lastSignInTime
-          }
-        });
-
-        // Log provider-specific data
-        user.providerData.forEach((profile, index) => {
-          console.log(`Provider ${index + 1} Data:`, {
-            providerId: profile.providerId,
-            displayName: profile.displayName,
-            email: profile.email,
-            phoneNumber: profile.phoneNumber,
-            photoURL: profile.photoURL,
-            uid: profile.uid
-          });
-        });
-
-        // Update profile with user data
-        setProfile(prev => ({
-          ...prev,
-          basicInfo: {
-            ...prev.basicInfo,
-            fullName: user.displayName || 'Update your name',
-            email: user.email || '',
-            profilePicture: user.photoURL || null
-          }
-        }));
-      } else {
-        console.log('No user is signed in');
-        navigate('/freelancer/login');
-      }
-    });
-
-    // Cleanup subscription
-    return () => unsubscribe();
-  }, [navigate]);
-
-  // Calculate completion percentage
-=======
->>>>>>> b053b25025e703f25891713d5d105351320ebd47
   const calculateCompletion = () => {
     let completed = 0;
     let total = 0;
@@ -198,21 +139,6 @@ const ProfileSetup = ({ isNewUser = false }) => {
           )}
         </div>
 
-<<<<<<< HEAD
-        {/* Profile Header */}
-        <div className="bg-white rounded-lg shadow overflow-hidden mb-8">
-          <div className="h-32 bg-gradient-to-r from-blue-600 to-blue-400"></div>
-          <div className="px-6 py-4 relative">
-            <div className="absolute -top-16 left-6">
-              <div className="relative group">
-                <img
-                  src={profile.basicInfo.profilePicture || "/api/placeholder/128/128"}
-                  alt="Profile"
-                  className="w-32 h-32 rounded-full border-4 border-white object-cover"
-                />
-                <button className="absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Camera size={20} />
-=======
         {/* Completion Alert */}
         {calculateCompletion() < 100 && (
           <CustomAlert>
@@ -318,7 +244,6 @@ const ProfileSetup = ({ isNewUser = false }) => {
                   className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                 >
                   Save Changes
->>>>>>> b053b25025e703f25891713d5d105351320ebd47
                 </button>
               </div>
             </div>

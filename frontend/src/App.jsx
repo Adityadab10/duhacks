@@ -40,8 +40,7 @@ function App() {
         <Route path="/freelancer/register" element={<FreelancerRegister/>}/>
         <Route path="/freelancer/dashboard" element={<FreelancerHero />} />
         <Route path="/freelancer/profile" element={<FreelancerProfile />} />
-        <Route path="/company/dashboard" element={<CDash />} />
-        <Route path="/company/jobs" element={<JobBoard />} />
+        {/* <Route path="/company/jobs" element={<JobBoard />} /> */}
         <Route path="/company/register" element={<CompanyRegistration />} />
         <Route path="/create-job" element={<CreateJobOpening />} />
      

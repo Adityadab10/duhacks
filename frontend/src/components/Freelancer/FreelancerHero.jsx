@@ -5,10 +5,7 @@ import { useNavigate } from 'react-router-dom';
 const ScrollableCategories = ({ categories }) => {
   const scrollRef = useRef(null);
   const [showProgress, setShowProgress] = useState(false);
-<<<<<<< HEAD
   const navigate = useNavigate();
-=======
->>>>>>> b053b25025e703f25891713d5d105351320ebd47
 
   const progressOptions = [
     { label: "Just Started", value: "20%" },
@@ -92,14 +89,28 @@ const FreelancerDashboard = () => {
   const [sortOption, setSortOption] = useState('');
   const navigate = useNavigate();
 
+  // Retrieve the stored JSON string from localStorage
+const userDataString = localStorage.getItem("user"); // Replace with your actual key
+
+// Parse the JSON string into an object
+if (userDataString) {
+  const userData = JSON.parse(userDataString);
+  const firebaseUID = userData.Uid
+const email = userData.email 
+const name = userData.displayName
+const photoURL = userData.photoURL
+console.log(firebaseUID,email,name,photoURL)
+  // Access specific properties like email
+  // console.log("User Email:", userData);
+} else {
+  console.log("No user data found in localStorage");
+}
+
+
   const categories = [
     { name: 'Web Design', price: '450$', count: '15' },
     { name: 'App Design', price: '300$', count: '8' },
-    { name: 'Landing Page', price: '250$', count: '12' },
-    { name: 'Web Design', price: '450$', count: '15' },
-    { name: 'App Design', price: '300$', count: '8' },
-    { name: 'Landing Page', price: '250$', count: '12' },   
-    { name: 'UI/UX', price: '400$', count: '10' }
+    
   ];
 
   const projects = [
@@ -124,27 +135,7 @@ const FreelancerDashboard = () => {
       budget: '450$',
       deadline: '2025-03-05'
     },
-    {
-      title: 'E-commerce Website',
-      description: 'Looking for an experienced web designer to create a modern e-commerce platform with responsive design.',
-      tags: ['E-commerce', 'Web Design', 'Responsive'],
-      budget: '600$',
-      deadline: '2025-03-10'
-    },
-    {
-      title: 'Web Design Project',
-      description: 'I need a web design for my company. I need the design in Figma files followed by a prototype.',
-      tags: ['UI Design', 'Web Design', 'prototyping'],
-      budget: '450$',
-      deadline: '2025-03-15'
-    },
-    {
-      title: 'E-commerce Website',
-      description: 'Looking for an experienced web designer to create a modern e-commerce platform with responsive design.',
-      tags: ['E-commerce', 'Web Design', 'Responsive'],
-      budget: '600$',
-      deadline: '2025-03-20'
-    }
+  
   ];
 
   const projectsPerPage = 3;

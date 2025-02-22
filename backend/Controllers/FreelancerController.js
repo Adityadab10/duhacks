@@ -1,13 +1,56 @@
-const Freelancer = require("../models/Freelancer"); // Import Freelancer model
+// filepath: /C:/Users/russe/Desktop/duhacks/backend/controllers/FreelancerController.js
+const Freelancer = require("../models/Freelancer");
 
-// Fetch all freelancers
-const getAllFreelancers = async (req, res) => {
+const registerFreelancer = async (req, res) => {
   try {
-    const freelancers = await Freelancer.find(); // Retrieve all freelancers from MongoDB
-    res.status(200).json(freelancers); // Send response with data
+    const {
+      firebaseUID,
+      bio,
+      email,
+      name,
+      profilePicture,
+      resume,
+      skills,
+      portfolio,
+      hourlyRate,
+      availability,
+      paymentMethod,
+      github,
+      rating,
+      reviews,
+    } = req.body;
+
+    // Check if the freelancer already exists
+    const existingFreelancer = await Freelancer.findOne({ firebaseUID });
+    if (existingFreelancer) {
+      return res.status(400).json({ message: "Freelancer already exists" });
+    }
+
+    // Create a new freelancer
+    const newFreelancer = new Freelancer({
+      firebaseUID,
+      bio,
+      email,
+      name,
+      profilePicture,
+      resume,
+      skills,
+      portfolio,
+      hourlyRate,
+      availability,
+      paymentMethod,
+      github,
+      rating,
+      reviews,
+    });
+
+    await newFreelancer.save();
+
+    res.status(201).json({ message: "Freelancer registered successfully", freelancer: newFreelancer });
   } catch (error) {
-    res.status(500).json({ message: "Error fetching freelancers", error });
+    console.error("Registration Error:", error);
+    res.status(500).json({ message: "Internal Server Error", error: error.message });
   }
 };
 
-module.exports = { getAllFreelancers };
+module.exports = { registerFreelancer };

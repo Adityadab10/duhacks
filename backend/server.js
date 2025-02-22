@@ -1,7 +1,10 @@
+// filepath: /C:/Users/russe/Desktop/duhacks/backend/server.js
 const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
 const cors = require("cors");
+const mongoose = require("mongoose");
+require("dotenv").config();
 
 const app = express();
 const server = http.createServer(app);
@@ -11,6 +14,21 @@ const io = new Server(server, {
     methods: ["GET", "POST"]
   }
 });
+
+mongoose
+  .connect(process.env.MONGO_URL)
+  .then(() => console.log("Database Connected"))
+  .catch((err) => console.log("Database not connected", err));
+
+app.use(cors({
+  origin: 'http://localhost:5173',
+  credentials: true,
+}));
+
+app.use(express.json()); // Add this line to parse JSON bodies
+
+// Routes
+app.use("/api", require("./routes/FreelancerRoutes"));
 
 io.on("connection", (socket) => {
   console.log("A user connected:", socket.id);
