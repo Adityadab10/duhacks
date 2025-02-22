@@ -290,4 +290,4 @@ const ProfileSetup = ({ isNewUser = false }) => {
   );
 };
 
-export default ProfileSetup;
+export default FreelancerProfile;

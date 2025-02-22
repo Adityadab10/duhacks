@@ -3,7 +3,7 @@ import { Eye, EyeOff, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { auth, provider, signInWithPopup } from "../../firebaseConfig";
 
-const LoginPage = () => {
+const FreelancerLogin = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -190,4 +190,4 @@ const LoginPage = () => {
   );
 };
 
-export default LoginPage;
+export default FreelancerLogin;
