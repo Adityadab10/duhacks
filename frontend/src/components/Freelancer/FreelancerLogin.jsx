@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff, ArrowRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const navigate = useNavigate();
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -140,9 +142,10 @@ const LoginPage = () => {
           <div className="mt-6 text-center">
             <p className="text-[#567C8D]">
               Don't have an account?{' '}
-              <a href="#" className="text-[#2F4156] font-semibold hover:text-[#567C8D]">
-                Sign up
-              </a>
+            <div onClick={navigate('/Signup')}>
+            Sign up
+
+            </div>
             </p>
           </div>
         </div>
