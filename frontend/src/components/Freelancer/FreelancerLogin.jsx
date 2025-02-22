@@ -10,8 +10,15 @@ const LoginPage = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Handle login logic here
-    console.log('Login attempted with:', { email, password });
+    // Here you would typically validate credentials with your backend
+    if (email && password) {
+      // Assuming login is successful
+      console.log('Login successful:', { email, password });
+      // Navigate to freelancer dashboard
+      navigate('/freelancer/dashboard');
+    } else {
+      console.log('Please fill in all fields');
+    }
   };
 
   const handleGoogleLogin = () => {
@@ -142,10 +149,12 @@ const LoginPage = () => {
           <div className="mt-6 text-center">
             <p className="text-[#567C8D]">
               Don't have an account?{' '}
-            <div onClick={navigate('/Signup')}>
-            Sign up
-
-            </div>
+              <button 
+                onClick={() => navigate('/freelancer/Register')}
+                className="text-[#2F4156] font-semibold hover:text-[#567C8D]"
+              >
+                Sign up
+              </button>
             </p>
           </div>
         </div>
