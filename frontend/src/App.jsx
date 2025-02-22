@@ -1,5 +1,6 @@
 import React from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { ChatProvider } from './context/ChatContext';
 import Navbar from './components/Navbar'
 import HeroSection from './components/HeroSection'
 import CompanyLogin from "./components/company/CompanyLogin";
@@ -20,8 +21,9 @@ function App() {
   const userId = urlParams.get("user") || "user1";
   const chatRoom = "room1";
   return (
-    <Router>
-      <Navbar/>
+    <ChatProvider>
+      <Router>
+        <Navbar/>
       
   
 
@@ -53,6 +55,7 @@ function App() {
         
       </Routes>
     </Router>
+    </ChatProvider>
   )
 }
 
