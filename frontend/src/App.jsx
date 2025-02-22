@@ -17,6 +17,7 @@ function App() {
       <HeroSection/>
       <FreelancerLogin/>
       <CDash/>
+  
       
       
     </Router>

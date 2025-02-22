@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Button, Input, Textarea } from "@/components/ui";
+import { Button, Input, Textarea } from "@/components/ui/index";
 
 const JobForm = ({ addJob }) => {
   const [newJob, setNewJob] = useState({ title: "", description: "" });
