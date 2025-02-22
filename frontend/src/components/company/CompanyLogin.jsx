@@ -1,115 +1,158 @@
-import React, { useState } from 'react';
-import { Eye, EyeOff, ArrowRight } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Eye, EyeOff, ArrowRight, Building2, Mail, Briefcase, Key, Lock, Globe } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-const CompanyLoginPage = () => {
+const CompanyLogin = () => {
   const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [loginMethod, setLoginMethod] = useState('token');
   const navigate = useNavigate();
+  
+  const tokenRef = useRef();
+  const emailRef = useRef();
+  const passwordRef = useRef();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Company Login Attempt:', { email, password });
+    setLoading(true);
+
+    try {
+      if (loginMethod === 'token') {
+        const token = tokenRef.current.value;
+        const storedToken = localStorage.getItem('companyToken');
+        const storedData = JSON.parse(localStorage.getItem('companyData') || '{}');
+
+        if (token === storedToken) {
+          navigate('/company/dashboard');
+        } else {
+          alert('Invalid company token. Please try again.');
+        }
+      } else {
+        const email = emailRef.current.value;
+        const password = passwordRef.current.value;
+        const storedData = JSON.parse(localStorage.getItem('companyData') || '{}');
+        
+        if (storedData.email === email && storedData.password === password) {
+          localStorage.setItem('companyToken', storedData.token);
+          navigate('/company/dashboard');
+        } else {
+          alert('Invalid email or password.');
+        }
+      }
+    } catch (error) {
+      console.error('Login Error:', error);
+      alert('Login failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
+  const InputField = ({ icon: Icon, type, placeholder, inputRef }) => (
+    <div className="relative">
+      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+        <Icon className="h-5 w-5 text-gray-400" />
+      </div>
+      <input
+        ref={inputRef}
+        type={type}
+        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+        placeholder={placeholder}
+        disabled={loading}
+        required
+      />
+    </div>
+  );
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#F5EEEB]">
-      <div className="w-full max-w-md">
-        {/* Main Card */}
-        <div className="bg-white rounded-lg shadow-lg p-8">
-          {/* Header */}
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-[#2F4156] mb-2">Welcome Back, Employer</h1>
-            <p className="text-[#567C8D]">Log in to post and manage job listings</p>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md mx-auto bg-white rounded-xl shadow-xl overflow-hidden">
+        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-8 text-white">
+          <h2 className="text-3xl font-bold text-center">Welcome Back</h2>
+          <p className="mt-2 text-center text-blue-100">Login to your company dashboard</p>
+        </div>
+
+        <div className="p-6 space-y-6">
+          <div className="flex rounded-lg bg-gray-100 p-1">
+            <button
+              onClick={() => setLoginMethod('token')}
+              className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${
+                loginMethod === 'token'
+                  ? 'bg-white shadow-sm text-blue-600'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Login with Token
+            </button>
+            <button
+              onClick={() => setLoginMethod('credentials')}
+              className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${
+                loginMethod === 'credentials'
+                  ? 'bg-white shadow-sm text-blue-600'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Login with Email
+            </button>
           </div>
 
-          {/* Login Form */}
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Company Email Input */}
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-[#2F4156] mb-2">
-                Company Email
-              </label>
-              <input
-                type="email"
-                id="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 rounded-lg border border-[#C8D9E6] focus:outline-none focus:border-[#567C8D] bg-white"
-                placeholder="Enter your company email"
-                required
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {loginMethod === 'token' ? (
+              <InputField
+                icon={Building2}
+                type="text"
+                placeholder="Enter your company token"
+                inputRef={tokenRef}
               />
-            </div>
-
-            {/* Password Input */}
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-[#2F4156] mb-2">
-                Password
-              </label>
-              <div className="relative">
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  id="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 rounded-lg border border-[#C8D9E6] focus:outline-none focus:border-[#567C8D] bg-white"
-                  placeholder="Enter your password"
-                  required
+            ) : (
+              <>
+                <InputField
+                  icon={Building2}
+                  type="email"
+                  placeholder="Email address"
+                  inputRef={emailRef}
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#567C8D]"
-                >
-                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                </button>
-              </div>
-            </div>
-
-            {/* Remember Me & Forgot Password */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  id="remember"
-                  className="h-4 w-4 text-[#567C8D] border-[#C8D9E6] rounded"
+                <InputField
+                  icon={Key}
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Password"
+                  inputRef={passwordRef}
                 />
-                <label htmlFor="remember" className="ml-2 text-sm text-[#567C8D]">
-                  Remember me
-                </label>
-              </div>
-              <a href="#" className="text-sm text-[#567C8D] hover:text-[#2F4156]">
-                Forgot password?
-              </a>
-            </div>
+              </>
+            )}
 
-            {/* Login Button */}
             <button
               type="submit"
-              className="w-full bg-[#2F4156] text-white py-3 px-4 rounded-lg hover:bg-[#567C8D] transition-colors duration-200 flex items-center justify-center space-x-2"
+              disabled={loading}
+              className="w-full flex justify-center items-center px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium rounded-lg hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
             >
-              <span>Log In</span>
-              <ArrowRight size={20} />
+              {loading ? (
+                <span className="flex items-center">
+                  Loading...
+                </span>
+              ) : (
+                <span className="flex items-center">
+                  Login <ArrowRight className="ml-2 h-5 w-5" />
+                </span>
+              )}
             </button>
+            
+            {/* Registration Link */}
+            <div className="mt-4 text-center">
+              <p className="text-gray-600">
+                Don't have an account?{" "}
+                <a
+                  href="/company/register"
+                  className="text-blue-600 hover:text-blue-700 font-medium transition-colors duration-300"
+                >
+                  Register here
+                </a>
+              </p>
+            </div>
           </form>
-
-          {/* Sign Up Link */}
-          <div className="mt-6 text-center">
-            <p className="text-[#567C8D]">
-              New to our platform?{' '}
-              <button 
-                onClick={() => navigate('/company/register')}
-                className="text-[#2F4156] font-semibold hover:text-[#567C8D] cursor-pointer"
-              >
-                Create a Company Account
-              </button>
-            </p>
-          </div>
         </div>
       </div>
     </div>
   );
 };
 
-export default CompanyLoginPage;
+export default CompanyLogin;

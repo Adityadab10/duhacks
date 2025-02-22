@@ -1,17 +1,23 @@
-import React, { useState } from "react";
+import React, { useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Briefcase, Clock, IndianRupee, FileText } from "lucide-react";
 
 const CreateJobOpening = () => {
   const navigate = useNavigate();
-  const [jobTitle, setJobTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [pay, setPay] = useState("");
-  const [timeRequired, setTimeRequired] = useState("");
+  const jobTitleRef = useRef();
+  const descriptionRef = useRef();
+  const payRef = useRef();
+  const timeRequiredRef = useRef();
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log({ jobTitle, description, pay, timeRequired });
+    const formData = {
+      jobTitle: jobTitleRef.current.value,
+      description: descriptionRef.current.value,
+      pay: payRef.current.value,
+      timeRequired: timeRequiredRef.current.value
+    };
+    console.log(formData);
     navigate("/dashboard");
   };
 
@@ -41,11 +47,10 @@ const CreateJobOpening = () => {
                   Job Title
                 </label>
                 <input
+                  ref={jobTitleRef}
                   type="text"
                   className="w-full p-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none text-sm"
                   placeholder="e.g. Senior Web Developer"
-                  value={jobTitle}
-                  onChange={(e) => setJobTitle(e.target.value)}
                   required
                 />
               </div>
@@ -56,11 +61,10 @@ const CreateJobOpening = () => {
                   Description
                 </label>
                 <textarea
+                  ref={descriptionRef}
                   className="w-full p-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none text-sm"
                   rows="4"
                   placeholder="Describe the job requirements, responsibilities, and qualifications..."
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
                   required
                 ></textarea>
               </div>
@@ -72,11 +76,10 @@ const CreateJobOpening = () => {
                     Pay (₹)
                   </label>
                   <input
+                    ref={payRef}
                     type="number"
                     className="w-full p-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none text-sm"
                     placeholder="e.g. 50000"
-                    value={pay}
-                    onChange={(e) => setPay(e.target.value)}
                     required
                   />
                 </div>
@@ -87,11 +90,10 @@ const CreateJobOpening = () => {
                     Time Required (Hours)
                   </label>
                   <input
+                    ref={timeRequiredRef}
                     type="number"
                     className="w-full p-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none text-sm"
                     placeholder="e.g. 40"
-                    value={timeRequired}
-                    onChange={(e) => setTimeRequired(e.target.value)}
                     required
                   />
                 </div>

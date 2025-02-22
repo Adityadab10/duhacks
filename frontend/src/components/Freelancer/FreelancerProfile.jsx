@@ -8,6 +8,7 @@ import { auth } from '../../firebaseConfig';
 import { useNavigate } from 'react-router-dom';
 
 const ProfileSetup = ({ isNewUser = false }) => {
+  const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(isNewUser);
   const [editingSections, setEditingSections] = useState({});
   const [showConfirmation, setShowConfirmation] = useState(false);
@@ -147,6 +148,18 @@ const ProfileSetup = ({ isNewUser = false }) => {
         )}
 
         {/* Profile Content */}
+        <div className="flex items-center mb-6">
+          <img
+            src={profile.basicInfo.profilePicture || "https://via.placeholder.com/100"}
+            alt="Profile"
+            className="w-20 h-20 rounded-full mr-4"
+          />
+          <div>
+            <h2 className="text-2xl font-bold text-gray-800">{profile.basicInfo.fullName}</h2>
+            <p className="text-gray-600">{profile.basicInfo.email}</p>
+          </div>
+        </div>
+
         <EditableSection
           section="basicInfo"
           title="Basic Information"
@@ -254,4 +267,4 @@ const ProfileSetup = ({ isNewUser = false }) => {
   );
 };
 
-export default ProfileSetup;
+export default FreelancerProfile;

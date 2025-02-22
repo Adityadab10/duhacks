@@ -1,6 +1,7 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, MessageCircle, Share2, ArrowRight, Star, Search } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { auth } from '../../firebaseConfig';
 
 const ScrollableCategories = ({ categories }) => {
   const scrollRef = useRef(null);
@@ -88,6 +89,27 @@ const FreelancerDashboard = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortOption, setSortOption] = useState('');
   const navigate = useNavigate();
+  const [userData, setUserData] = useState({
+    displayName: '',
+    photoURL: null,
+    email: ''
+  });
+
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (user) {
+        setUserData({
+          displayName: user.displayName || 'Update your name',
+          photoURL: user.photoURL,
+          email: user.email
+        });
+      } else {
+        navigate('/freelancer/login');
+      }
+    });
+
+    return () => unsubscribe();
+  }, [navigate]);
 
   // Retrieve the stored JSON string from localStorage
 const userDataString = localStorage.getItem("user"); // Replace with your actual key
@@ -175,21 +197,16 @@ console.log(firebaseUID,email,name,photoURL)
           {/* Profile Section */}
           <div className="col-span-1">
             <div className="bg-white rounded-lg p-6 shadow-lg">
-              <div className="flex flex-col items-center">
-                <div className="w-24 h-24 rounded-full overflow-hidden mb-4">
-                  <img src="/api/placeholder/96/96" alt="Profile" className="w-full h-full object-cover" />
-                </div>
-                <h2 className="text-xl font-bold text-[#2F4156]">John Smith</h2>
-                <p className="text-[#567C8D] mb-4">Senior Web Developer</p>
-                <button  
-                  onClick={() => navigate('/freelancer/profile')}
-                  className="bg-[#2F4156] text-white px-4 py-2 rounded-md hover:bg-[#567C8D] transition-colors w-full"
-                >
-                  View Profile
-                </button>
+              <div className="flex flex-col items-center mb-6">
+                <img
+                  src={userData.photoURL || "https://via.placeholder.com/100"}
+                  alt="Profile"
+                  className="w-20 h-20 rounded-full mb-4"
+                />
+                <h2 className="text-xl font-bold text-[#2F4156]">{userData.displayName}</h2>
+                <p className="text-[#567C8D]">{userData.email}</p>
               </div>
-
-              <div className="mt-6 space-y-4">
+              <div className="space-y-4">
                 <div className="flex justify-between items-center">
                   <span className="text-[#567C8D]">Avg Earnings</span>
                   <span className="font-bold text-[#2F4156]">500$</span>

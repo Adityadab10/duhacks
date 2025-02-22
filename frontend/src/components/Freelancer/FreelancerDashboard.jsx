@@ -1,17 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import JobBoard from "./JobBoard";
-import CompanyHero from "./CompanyHero";
 import ChatDrawer from "../ChatDrawer";
 import ChatList from "../ChatList";
-import { useChat } from "../../context/ChatContext";
 import { MessageCircle } from 'lucide-react';
 
-const CompanyDashboard = () => {
+const FreelancerDashboard = () => {
   const navigate = useNavigate();
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [userId, setUserId] = useState(null);
-  const { startChat } = useChat();
 
   useEffect(() => {
     // Get user data from localStorage
@@ -21,34 +17,34 @@ const CompanyDashboard = () => {
     }
   }, []);
 
-  const handleStartChat = (freelancerId) => {
-    startChat(userId, freelancerId);
-    setIsChatOpen(true);
-  };
-
   return (
     <div className="min-h-screen bg-[#f5efeb]">
-      {/* Company Hero Section */}
-      <CompanyHero />
+      {/* Freelancer Hero Section */}
+      <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white py-12">
+        <div className="container mx-auto px-4">
+          <h1 className="text-4xl font-bold mb-4">Welcome Back!</h1>
+          <p className="text-xl">Find your next opportunity</p>
+        </div>
+      </div>
 
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2">
             <div className="bg-white rounded-lg shadow-lg p-6">
-              <h2 className="text-2xl font-semibold mb-6">Company Dashboard</h2>
+              <h2 className="text-2xl font-semibold mb-6">Your Dashboard</h2>
               
-              {/* Job Openings Section */}
+              {/* Dashboard Content */}
               <div className="space-y-6">
-                <div className="border-b border-gray-200 pb-6">
-                  <h3 className="text-xl font-semibold mb-4">Available Positions</h3>
-                  <p className="text-gray-600">
-                    Explore open positions and find top talent for your company.
-                  </p>
+                <div className="border-b pb-6">
+                  <h3 className="text-xl font-semibold mb-4">Recent Activity</h3>
+                  {/* Add recent activity content */}
                 </div>
-
-                {/* Job Board Component */}
-                <JobBoard onChatWithFreelancer={handleStartChat} />
+                
+                <div>
+                  <h3 className="text-xl font-semibold mb-4">Your Applications</h3>
+                  {/* Add applications list */}
+                </div>
               </div>
             </div>
           </div>
@@ -80,4 +76,4 @@ const CompanyDashboard = () => {
   );
 };
 
-export default CompanyDashboard;
+export default FreelancerDashboard;

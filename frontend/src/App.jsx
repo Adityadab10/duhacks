@@ -1,5 +1,6 @@
 import React from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { ChatProvider } from './context/ChatContext';
 import Navbar from './components/Navbar'
 import HeroSection from './components/HeroSection'
 import CompanyLogin from "./components/company/CompanyLogin";
@@ -11,6 +12,8 @@ import FreelancerProfile from "./components/Freelancer/FreelancerProfile"
 import CreateJobOpening from './components/company/CreateJob';
 import PeerChat from "./components/ChatApp";
 import CompanyRegistration from "./components/company/CompanyRegistration";
+import CDash from "./components/company/CompanyDashboard";
+import JobBoard from "./components/company/JobBoard";
 
 
 function App() {
@@ -18,8 +21,9 @@ function App() {
   const userId = urlParams.get("user") || "user1";
   const chatRoom = "room1";
   return (
-    <Router>
-      <Navbar/>
+    <ChatProvider>
+      <Router>
+        <Navbar/>
       
   
 
@@ -40,7 +44,8 @@ function App() {
         <Route path="/freelancer/register" element={<FreelancerRegister/>}/>
         <Route path="/freelancer/dashboard" element={<FreelancerHero />} />
         <Route path="/freelancer/profile" element={<FreelancerProfile />} />
-        {/* <Route path="/company/jobs" element={<JobBoard />} /> */}
+        <Route path="/company/dashboard" element={<CompanyDashboard />} />
+        <Route path="/company/jobs" element={<JobBoard />} />
         <Route path="/company/register" element={<CompanyRegistration />} />
         <Route path="/create-job" element={<CreateJobOpening />} />
      
@@ -50,6 +55,7 @@ function App() {
         
       </Routes>
     </Router>
+    </ChatProvider>
   )
 }
 
