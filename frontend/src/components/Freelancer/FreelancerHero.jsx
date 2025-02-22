@@ -81,7 +81,6 @@ const ScrollableCategories = ({ categories }) => {
     </div>
   );
 };
-import { useNavigate } from 'react-router-dom';
 
 const FreelancerDashboard = () => {
   const [activeCategory, setActiveCategory] = useState('Web Design');
