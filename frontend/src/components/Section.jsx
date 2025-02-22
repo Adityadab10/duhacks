@@ -7,6 +7,10 @@ export default function Section() {
       navigate('/freelancer-login');
     };
 
+    const handleCompanySignup = () => {
+      navigate('/company-login');
+    };
+
     return (
       <div className="flex justify-center items-center min-h-screen bg-gray-100">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -40,7 +44,9 @@ export default function Section() {
             <p className="text-gray-500 mt-2">
               I want to hire freelancers to work on my projects.
             </p>
-            <button className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+            <button 
+            onClick={handleCompanySignup}
+            className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
               Sign Up
             </button>
           </div>
