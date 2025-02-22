@@ -1,12 +1,14 @@
 import React from 'react'
-import Home from './Home'
-
+import Navbar from './components/Navbar'
+import HeroSection from './components/HeroSection'
 
 function App() {
   return (
-   
-      <Home/>
- 
+    <>
+      <Navbar/>
+      <HeroSection/>
+      <h1 className='text-3xl font-bold underline'>Hello World</h1>
+    </>
   )
 }
 
