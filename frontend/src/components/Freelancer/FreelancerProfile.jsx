@@ -7,7 +7,8 @@ import {
 import { auth } from '../../firebaseConfig';
 import { useNavigate } from 'react-router-dom';
 
-const FreelancerProfile = ({ isNewUser = false }) => {
+const ProfileSetup = ({ isNewUser = false }) => {
+  const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(isNewUser);
   const [editingSections, setEditingSections] = useState({});
   const [showConfirmation, setShowConfirmation] = useState(false);
@@ -35,6 +36,29 @@ const FreelancerProfile = ({ isNewUser = false }) => {
       categories: []
     }
   });
+
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (user) {
+        console.log('User data:', user);
+        // Update profile with user data
+        setProfile(prev => ({
+          ...prev,
+          basicInfo: {
+            ...prev.basicInfo,
+            fullName: user.displayName || 'Update your name',
+            email: user.email || '',
+            profilePicture: user.photoURL || null
+          }
+        }));
+      } else {
+        // Redirect to login if not authenticated
+        navigate('/freelancer/login');
+      }
+    });
+
+    return () => unsubscribe();
+  }, [navigate]);
 
   const calculateCompletion = () => {
     let completed = 0;
@@ -147,6 +171,18 @@ const FreelancerProfile = ({ isNewUser = false }) => {
         )}
 
         {/* Profile Content */}
+        <div className="flex items-center mb-6">
+          <img
+            src={profile.basicInfo.profilePicture || "https://via.placeholder.com/100"}
+            alt="Profile"
+            className="w-20 h-20 rounded-full mr-4"
+          />
+          <div>
+            <h2 className="text-2xl font-bold text-gray-800">{profile.basicInfo.fullName}</h2>
+            <p className="text-gray-600">{profile.basicInfo.email}</p>
+          </div>
+        </div>
+
         <EditableSection
           section="basicInfo"
           title="Basic Information"

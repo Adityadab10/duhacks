@@ -28,6 +28,7 @@ const io = new Server(server, {
 // Store active chat rooms and their participants
 const chatRooms = new Map();
 const userSockets = new Map();
+app.use(cors());
 
 io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
