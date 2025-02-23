@@ -11,17 +11,14 @@
     "socket.io": "^4.8.1"
   },
   "name": "backend",
-  "type": "module",
+  "type": "commonjs",
   "version": "1.0.0",
-  
   "main": "index.js",
-  
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
   "description": ""
 }

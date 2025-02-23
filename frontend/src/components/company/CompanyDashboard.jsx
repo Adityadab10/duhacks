@@ -14,6 +14,16 @@ const CompanyDashboard = () => {
   const { startChat } = useChat();
 
   useEffect(() => {
+    // Check if user is authenticated
+    const token = localStorage.getItem('token');
+    const userData = localStorage.getItem('userData');
+    
+    if (!token || !userData) {
+      navigate('/company/login');
+    }
+  }, [navigate]);
+
+  useEffect(() => {
     // Get user data from localStorage
     const userData = JSON.parse(localStorage.getItem('userData'));
     if (userData) {
@@ -24,6 +34,20 @@ const CompanyDashboard = () => {
   const handleStartChat = (freelancerId) => {
     startChat(userId, freelancerId);
     setIsChatOpen(true);
+  };
+
+  const handleSubmit = async (formData) => {
+    const response = await fetch("http://localhost:4000/api/company/register", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(formData),
+    });
+
+    console.log('Response status:', response.status); // Add this line
+    const data = await response.json();
+    console.log('Response data:', data); // Add this line
   };
 
   return (

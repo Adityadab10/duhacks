@@ -15,7 +15,7 @@ import CompanyDashboard from "./components/company/CompanyDashboard";
 import JobBoard from "./components/company/JobBoard";
 import AboutUs from "./components/ui/AboutUs";
 import CompanyHero from "./components/company/CompanyHero";
-import ChatApp from './components/ChatApp';
+
 
 function App() {
   const urlParams = new URLSearchParams(window.location.search);
@@ -26,7 +26,7 @@ function App() {
       <Router>
       <div className="min-h-screen flex flex-col">
           <Navbar />
-          <ChatApp/>
+          {/* <ChatApp/> */}
           
         <main className="flex-grow">
           <Routes>
@@ -35,7 +35,7 @@ function App() {
                 <HeroSection />
                 <Section />
                 <div className="app-container">
-                  <ChatApp userId={userId} chatRoom={chatRoom} />
+                  {/* <ChatApp userId={userId} chatRoom={chatRoom} /> */}
                 </div>
               </>
             } />
