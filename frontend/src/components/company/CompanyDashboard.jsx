@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
-import Input from "@/components/ui/input";
 import Button from "@/components/ui/button";
 import { Search, ChevronLeft, ChevronRight, Briefcase, Users, BarChart, Clock } from "lucide-react";
 import JobBoard from "./JobBoard";
@@ -114,30 +113,7 @@ const CompanyDashboard = () => {
                 </div>
                 
                 {/* Chat Interface */}
-                <div className="flex flex-col h-[600px]">
-                  {!isChatOpen ? (
-                    <ChatList 
-                      userId={userId}
-                      onChatSelect={handleStartChat}
-                      userRole="company"
-                    />
-                  ) : (
-                    <div>
-                      <button
-                        onClick={() => setIsChatOpen(false)}
-                        className="mb-4 text-sm text-blue-600 hover:text-blue-800 flex items-center"
-                      >
-                        <ChevronLeft className="w-4 h-4 mr-1" />
-                        Back to Messages
-                      </button>
-                      <ChatApp
-                        userId={userId}
-                        chatPartnerId={selectedFreelancer}
-                        userRole="company"
-                      />
-                    </div>
-                  )}
-                </div>
+                
               </CardContent>
             </Card>
           </div>
