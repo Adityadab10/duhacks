@@ -5,7 +5,6 @@ import Input from "@/components/ui/input";
 import Button from "@/components/ui/button";
 import { Search, ChevronLeft, ChevronRight, Briefcase, Users, BarChart, Clock } from "lucide-react";
 import JobBoard from "./JobBoard";
-import ChatList from "../ChatList";
 import ChatApp from "../ChatApp";
 import { useChat } from "../../context/ChatContext";
 
@@ -115,7 +114,7 @@ const CompanyDashboard = () => {
                 </div>
                 
                 {/* Chat Interface */}
-                <div className="flex flex-col h-[600px]">
+                {/* <div className="flex flex-col h-[600px]">
                   {!isChatOpen ? (
                     <ChatList 
                       userId={userId}
@@ -138,7 +137,7 @@ const CompanyDashboard = () => {
                       />
                     </div>
                   )}
-                </div>
+                </div> */}
               </CardContent>
             </Card>
           </div>
