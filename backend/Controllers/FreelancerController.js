@@ -1,6 +1,6 @@
 const Freelancer = require("../models/Freelancer");
 
-const registerFreelancer = async (req, res) => {
+const registerOrLoginFreelancer = async (req, res) => {
   try {
     const {
       firebaseUID,
@@ -23,10 +23,10 @@ const registerFreelancer = async (req, res) => {
     let freelancer = await Freelancer.findOne({ firebaseUID });
 
     if (freelancer) {
-      return res.status(200).json({ message: "Freelancer already exists", freelancer });
+      return res.status(200).json({ message: "Login successful", freelancer });
     }
 
-    // Create a new freelancer
+    // If not found, register the freelancer
     freelancer = new Freelancer({
       firebaseUID,
       bio,
@@ -47,11 +47,13 @@ const registerFreelancer = async (req, res) => {
     await freelancer.save();
 
     res.status(201).json({ message: "Freelancer registered successfully", freelancer });
+
   } catch (error) {
-    console.error("Registration Error:", error);
+    console.error("Error:", error);
     res.status(500).json({ message: "Internal Server Error", error: error.message });
   }
 };
+
 
 
 const getFreelancerProfile = async (req, res) => {
@@ -103,4 +105,4 @@ const updateFreelancerProfile = async (req, res) => {
 };
 
 
-module.exports = { registerFreelancer, getFreelancerProfile,updateFreelancerProfile };
+module.exports = { registerOrLoginFreelancer, getFreelancerProfile,updateFreelancerProfile };

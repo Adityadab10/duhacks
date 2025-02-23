@@ -24,49 +24,50 @@
       }
     };
 
-    const handleGoogleLogin = async () => {
-      try {
-        const result = await signInWithPopup(auth, provider);
-        const user = result.user;
-
-        console.log("User Info:", user.uid, user.displayName, user.email,user.photoURL);
-
-        // Extract necessary data
-        const freelancerData = {
-          firebaseUID: user.uid,
-          email: user.email,
-          name: user.displayName,
-          profilePicture: user.photoURL,
-          bio: "", // Optional: User can add this later
-          resume: "",
-          skills: [],
-          portfolio: "",
-          hourlyRate: 0,
-          availability: "freelance",
-          paymentMethod: ["PayPal"],
-          github: "",
-          rating: 0,
-          reviews: 0,
-        };
-
-        // Save to localStorage
-        localStorage.setItem("user", JSON.stringify(user));
-
-        // Send data to backend
-        const response = await axios.post("http://localhost:4000/api/register", freelancerData);
-
-        if (response.status === 201) {
-          console.log("Freelancer registered:", response.data);
-          navigate("/freelancer/dashboard");
-        } else {
-          console.error("Registration failed:", response.data.message);
-          alert(`Registration failed: ${response.data.message}`);
+      const handleGoogleLogin = async () => {
+        try {
+          const result = await signInWithPopup(auth, provider);
+          const user = result.user;
+      
+          console.log("User Info:", user.uid, user.displayName, user.email, user.photoURL);
+      
+          // Extract necessary data
+          const freelancerData = {
+            firebaseUID: user.uid,
+            email: user.email,
+            name: user.displayName,
+            profilePicture: user.photoURL,
+            bio: "", // Optional: User can add this later
+            resume: "",
+            skills: [],
+            portfolio: "",
+            hourlyRate: 0,
+            availability: "freelance",
+            paymentMethod: ["PayPal"],
+            github: "",
+            rating: 0,
+            reviews: 0,
+          };
+      
+          // Save user info to localStorage
+          localStorage.setItem("user", JSON.stringify(user));
+      
+          // Send login/register request to backend
+          const response = await axios.post("http://localhost:4000/api/registerOrLogin", freelancerData);
+      
+          if (response.status === 200 || response.status === 201) {
+            console.log("Login/Registration successful:", response.data);
+            navigate("/freelancer/dashboard");
+          } else {
+            console.error("Error:", response.data.message);
+            alert(`Error: ${response.data.message}`);
+          }
+        } catch (error) {
+          console.error("Google Sign-In Error:", error);
+          alert(`Failed to sign in with Google: ${error.message}`);
         }
-      } catch (error) {
-        console.error("Google Sign-In Error:", error);
-        alert(`Failed to sign in with Google: ${error.message}`);
-      }
-    };
+      };
+    
 
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#2F4156] to-[#1A2A3A] text-black flex items-center justify-center">
