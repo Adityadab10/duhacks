@@ -2,22 +2,17 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { io } from "socket.io-client";
 import { Send, Smile, Paperclip, MoreVertical, Phone, Video, User } from 'lucide-react';
 
-// Create socket instance outside component to prevent recreation on re-renders
-const socket = io("http://localhost:4000", {
-  reconnection: true,
-  reconnectionAttempts: 5,
-  reconnectionDelay: 1000
-});
-
 export default function ChatApp({ userId, chatRoom }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [isConnected, setIsConnected] = useState(false);
   const [typingUsers, setTypingUsers] = useState(new Set());
   const [onlineUsers, setOnlineUsers] = useState(new Set());
+  const [error, setError] = useState(null);
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
   const inputRef = useRef(null);
+  const socketRef = useRef(null);
 
   // Scroll to bottom of messages
   const scrollToBottom = useCallback(() => {
@@ -32,14 +27,14 @@ export default function ChatApp({ userId, chatRoom }) {
 
   // Handle user typing status
   const handleTyping = useCallback(() => {
-    socket.emit("typing", { room: chatRoom, userId, isTyping: true });
+    socketRef.current.emit("typing", { room: chatRoom, userId, isTyping: true });
     
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
     }
 
     typingTimeoutRef.current = setTimeout(() => {
-      socket.emit("typing", { room: chatRoom, userId, isTyping: false });
+      socketRef.current.emit("typing", { room: chatRoom, userId, isTyping: false });
     }, 1000);
   }, [chatRoom, userId]);
 
@@ -54,14 +49,14 @@ export default function ChatApp({ userId, chatRoom }) {
       timestamp: new Date().toISOString(),
     };
 
-    socket.emit("message", { room: chatRoom, message: messageData });
+    socketRef.current.emit("message", { room: chatRoom, message: messageData });
     setInput("");
     inputRef.current?.focus();
 
     // Clear typing indicator
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
-      socket.emit("typing", { room: chatRoom, userId, isTyping: false });
+      socketRef.current.emit("typing", { room: chatRoom, userId, isTyping: false });
     }
   }, [input, isConnected, chatRoom, userId]);
 
@@ -71,21 +66,17 @@ export default function ChatApp({ userId, chatRoom }) {
       transports: ['websocket', 'polling'],
     });
 
+    socketRef.current = socket;
+
     socket.on('connect', () => {
       console.log('Connected to WebSocket server');
-      setSocket(socket);
+      setIsConnected(true);
+      socket.emit("joinRoom", { room: chatRoom, userId });
     });
 
     socket.on('connect_error', (err) => {
       console.error('Connection error:', err);
       setError('Failed to connect to WebSocket server');
-    });
-
-    // Connection events
-    socket.on("connect", () => {
-      setIsConnected(true);
-      console.log("Connected to chat server");
-      socket.emit("joinRoom", { room: chatRoom, userId });
     });
 
     socket.on("disconnect", () => {
@@ -133,12 +124,13 @@ export default function ChatApp({ userId, chatRoom }) {
     return () => {
       socket.off("connect");
       socket.off("disconnect");
-      socket.disconnect();
+      socket.off("message");
       socket.off("userTyping");
       socket.off("userJoined");
       socket.off("userLeft");
       socket.off("roomUsers");
       socket.emit("leaveRoom", { room: chatRoom, userId });
+      socket.disconnect();
     };
   }, [chatRoom, userId, handleMessage]);
 
@@ -283,6 +275,4 @@ export default function ChatApp({ userId, chatRoom }) {
       </div>
     </div>
   );
-};
-
-export default ChatApp;
+}

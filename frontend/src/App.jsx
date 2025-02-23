@@ -10,7 +10,7 @@ import FreelancerLogin from "./components/Freelancer/FreelancerLogin";
 import FreelancerHero from "./components/Freelancer/FreelancerHero";
 import FreelancerProfile from "./components/Freelancer/FreelancerProfile";
 import CreateJobOpening from './components/company/CreateJob';
-import PeerChat from "./components/ChatApp";
+import ChatApp from "./components/ChatApp";
 import CompanyRegistration from "./components/company/CompanyRegistration";
 import CompanyDashboard from "./components/company/CompanyDashboard";
 import JobBoard from "./components/company/JobBoard";
@@ -34,7 +34,7 @@ function App() {
                 <HeroSection />
                 <Section />
                 <div className="app-container">
-                  <PeerChat userId={userId} chatRoom={chatRoom} />
+                  <ChatApp userId={userId} chatRoom={chatRoom} />
                 </div>
               </>
             } />
