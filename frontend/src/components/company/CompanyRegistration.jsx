@@ -103,7 +103,9 @@ const CompanyRegistration = () => {
       localStorage.setItem("userData", JSON.stringify({
         ...data.company,
         token: token
+    
       }));
+      console.log(userData);
 
       // Show token popup
       setShowTokenPopup(true);
