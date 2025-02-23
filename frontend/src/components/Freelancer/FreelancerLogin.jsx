@@ -1,7 +1,9 @@
+// filepath: /C:/Users/russe/Desktop/duhacks/frontend/src/components/Freelancer/FreelancerLogin.jsx
 import React, { useState } from 'react';
 import { Eye, EyeOff, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { auth, provider, signInWithPopup } from "../../firebaseConfig";
+import axios from 'axios';
 
 const FreelancerLogin = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -25,39 +27,49 @@ const FreelancerLogin = () => {
   const handleGoogleLogin = async () => {
     try {
       const result = await signInWithPopup(auth, provider);
-      console.log("User Info:", result.user);
-      
-      // Store user info in localStorage or state management
-      localStorage.setItem('user', JSON.stringify(result.user));
-      
-      // Navigate to dashboard
-      navigate("/freelancer/dashboard");
+      const user = result.user;
+
+      console.log("User Info:", user);
+
+      // Extract necessary data
+      const freelancerData = {
+        firebaseUID: user.uid,
+        email: user.email,
+        name: user.displayName,
+        profilePicture: user.photoURL,
+        bio: "", // Optional: User can add this later
+        resume: "",
+        skills: [],
+        portfolio: "",
+        hourlyRate: 0,
+        availability: "freelance",
+        paymentMethod: ["PayPal"],
+        github: "",
+        rating: 0,
+        reviews: 0,
+      };
+
+      // Save to localStorage
+      localStorage.setItem("user", JSON.stringify(user));
+
+      // Send data to backend
+      const response = await axios.post("http://localhost:4000/api/register", freelancerData);
+
+      if (response.status === 201) {
+        console.log("Freelancer registered:", response.data);
+        navigate("/freelancer/dashboard");
+      } else {
+        console.error("Registration failed:", response.data.message);
+        alert(`Registration failed: ${response.data.message}`);
+      }
     } catch (error) {
       console.error("Google Sign-In Error:", error);
-      // More detailed error information
-      if (error.code) {
-        console.error("Error code:", error.code);
-      }
-      if (error.message) {
-        console.error("Error message:", error.message);
-      }
-      if (error.email) {
-        console.error("Error email:", error.email);
-      }
-      if (error.credential) {
-        console.error("Error credential:", error.credential);
-      }
-      
-      // Show specific error message to user
       alert(`Failed to sign in with Google: ${error.message}`);
     }
   };
 
   return (
-    <div 
-      className="min-h-screen bg-gradient-to-br from-[#2F4156] to-[#1A2A3A] text-black flex items-center justify-center"
-      
-    >
+    <div className="min-h-screen bg-gradient-to-br from-[#2F4156] to-[#1A2A3A] text-black flex items-center justify-center">
       <div className="w-full max-w-md p-4">
         {/* Main Card */}
         <div className="bg-white rounded-lg shadow-xl p-8 backdrop-blur-sm">

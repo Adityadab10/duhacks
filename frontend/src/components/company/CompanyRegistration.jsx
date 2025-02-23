@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useRef, useState } from 'react';
 import { Eye, EyeOff, ArrowRight, Building2, Mail, Briefcase, Lock, Globe } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { auth, provider, signInWithPopup } from "../../firebaseConfig";
@@ -17,7 +17,6 @@ const CompanyRegistration = () => {
   const agreeToTermsRef = useRef();
 
   const generateCompanyToken = () => {
-    // Generate a unique token: timestamp + random string + company name hash
     const timestamp = Date.now().toString(36);
     const randomStr = Math.random().toString(36).substring(2, 8);
     const companyHash = companyNameRef.current.value.split('').reduce((acc, char) => {

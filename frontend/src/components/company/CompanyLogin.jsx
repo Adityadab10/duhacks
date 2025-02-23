@@ -23,7 +23,7 @@ const CompanyLogin = () => {
         const storedData = JSON.parse(localStorage.getItem('companyData') || '{}');
 
         if (token === storedToken) {
-          navigate('/company/dashboard');
+          navigate('/company/hero');
         } else {
           alert('Invalid company token. Please try again.');
         }
@@ -34,7 +34,7 @@ const CompanyLogin = () => {
         
         if (storedData.email === email && storedData.password === password) {
           localStorage.setItem('companyToken', storedData.token);
-          navigate('/company/dashboard');
+          navigate('/company/hero');
         } else {
           alert('Invalid email or password.');
         }

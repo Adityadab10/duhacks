@@ -67,6 +67,20 @@ export default function ChatApp({ userId, chatRoom }) {
 
   // Setup socket event listeners
   useEffect(() => {
+    const socket = io('http://localhost:4000', {
+      transports: ['websocket', 'polling'],
+    });
+
+    socket.on('connect', () => {
+      console.log('Connected to WebSocket server');
+      setSocket(socket);
+    });
+
+    socket.on('connect_error', (err) => {
+      console.error('Connection error:', err);
+      setError('Failed to connect to WebSocket server');
+    });
+
     // Connection events
     socket.on("connect", () => {
       setIsConnected(true);
@@ -119,7 +133,7 @@ export default function ChatApp({ userId, chatRoom }) {
     return () => {
       socket.off("connect");
       socket.off("disconnect");
-      socket.off("message");
+      socket.disconnect();
       socket.off("userTyping");
       socket.off("userJoined");
       socket.off("userLeft");
@@ -139,6 +153,10 @@ export default function ChatApp({ userId, chatRoom }) {
       minute: '2-digit' 
     });
   };
+
+  if (error) {
+    return <div className="error">{error}</div>;
+  }
 
   return (
     <div className="flex flex-col h-[600px] max-w-2xl mx-auto bg-white rounded-xl shadow-xl overflow-hidden">
@@ -265,4 +283,6 @@ export default function ChatApp({ userId, chatRoom }) {
       </div>
     </div>
   );
-}
+};
+
+export default ChatApp;

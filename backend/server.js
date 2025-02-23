@@ -1,3 +1,4 @@
+// filepath: /C:/Users/russe/Desktop/duhacks/backend/server.js
 require('dotenv').config();
 
 const express = require("express");
@@ -6,10 +7,10 @@ const { Server } = require("socket.io");
 const cors = require("cors");
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 const Message = require('./models/Message');
 const ChatRoom = require('./models/ChatRoom');
-const companyRoutes = require('./routes/companyRoutes');
+require("dotenv").config();
 
 const app = express();
 
@@ -152,6 +153,20 @@ const io = new Server(server, {
 
 // Store active chat rooms and their participants
 const activeUsers = new Map();
+mongoose
+  .connect(process.env.MONGO_URL)
+  .then(() => console.log("Database Connected"))
+  .catch((err) => console.log("Database not connected", err));
+
+app.use(cors({
+  origin: 'http://localhost:5173',
+  credentials: true,
+}));
+
+app.use(express.json()); // Add this line to parse JSON bodies
+
+// Routes
+app.use("/api", require("./routes/FreelancerRoutes"));
 
 io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
