@@ -10,6 +10,7 @@ const ScrollableCategories = ({ categories }) => {
   
   const [showProgress, setShowProgress] = useState(false);
   const navigate = useNavigate();
+  
 
   const progressOptions = [
     { label: "Just Started", value: "20%" },
@@ -193,6 +194,10 @@ const FreelancerDashboard = () => {
   const [currentPage, setCurrentPage] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortOption, setSortOption] = useState('');
+  const [showChatList, setShowChatList] = useState(false);
+  const [selectedChat, setSelectedChat] = useState(null);
+  const { getUserChats } = useChat();
+
   const navigate = useNavigate();
   const [userData, setUserData] = useState({
     displayName: '',
