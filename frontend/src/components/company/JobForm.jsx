@@ -1,224 +1,251 @@
-import React, { useState } from "react";
-import { Button, Input, Textarea } from "@/components/ui/index";
-import { X } from "lucide-react";
+import { useState, useEffect } from 'react';
+import axios from 'axios';
 
-// Predefined tags for consistency
-const AVAILABLE_TAGS = [
-  "React", "Angular", "Vue", "Node.js", "Python", "Java", "JavaScript",
-  "Frontend", "Backend", "Full Stack", "DevOps", "UI/UX", "Mobile",
-  "AWS", "Database", "AI/ML", "Blockchain", "Cloud", "Security"
-];
-
-const JobForm = ({ addJob, onClose }) => {
-  const [newJob, setNewJob] = useState({
-    title: "",
-    description: "",
-    type: "Full-time",
-    company: "Your Company",
-    salary: "",
-    location: "",
-    tags: []
+const CreateJob = () => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
+  
+  const [jobData, setJobData] = useState({
+    jobTitle: '',
+    pay: '',
+    time: '',
+    skills: '',
+    description: '',
+    companyId: ''
   });
-  const [tagInput, setTagInput] = useState("");
-  const [suggestedTags, setSuggestedTags] = useState([]);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (newJob.title && newJob.description) {
-      const jobToAdd = {
-        ...newJob,
-        id: Date.now(),
-        createdAt: new Date().toISOString(),
-        applications: []
-      };
+  const [validationErrors, setValidationErrors] = useState({});
+  
+  useEffect(() => {
+    const userData = JSON.parse(localStorage.getItem("userData"));
+    console.log("Retrieved userData from localStorage:", userData);  // Debugging line
 
-      const existingJobs = JSON.parse(localStorage.getItem('jobs')) || [];
-      const updatedJobs = [...existingJobs, jobToAdd];
-      localStorage.setItem('jobs', JSON.stringify(updatedJobs));
+    if (userData && userData.id) {
+      console.log("Extracted Company ID:", userData.id);  // Debugging line
 
-      addJob(jobToAdd);
-      setNewJob({
-        title: "",
-        description: "",
-        type: "Full-time",
-        company: "Your Company",
-        salary: "",
-        location: "",
-        tags: []
-      });
-
-      if (onClose) onClose();
-    }
-  };
-
-  const handleTagInput = (e) => {
-    const input = e.target.value;
-    setTagInput(input);
-
-    // Filter available tags based on input
-    if (input.trim()) {
-      const filtered = AVAILABLE_TAGS.filter(tag => 
-        tag.toLowerCase().includes(input.toLowerCase()) &&
-        !newJob.tags.includes(tag)
-      );
-      setSuggestedTags(filtered);
-    } else {
-      setSuggestedTags([]);
-    }
-  };
-
-  const addTag = (tag) => {
-    if (!newJob.tags.includes(tag)) {
-      setNewJob(prev => ({
+      setJobData(prev => ({
         ...prev,
-        tags: [...prev.tags, tag]
+        companyId: userData.id
+      }));
+    } else {
+      console.error("No valid company ID found in localStorage");
+    }
+  }, []);
+
+  const validateForm = () => {
+    const errors = {};
+    
+    if (!jobData.jobTitle.trim()) {
+      errors.jobTitle = 'Job title is required';
+    }
+    
+    if (!jobData.time) {
+      errors.time = 'Time is required';
+    }
+    
+    if (!jobData.description.trim()) {
+      errors.description = 'Description is required';
+    }
+    
+    if (jobData.pay && isNaN(jobData.pay)) {
+      errors.pay = 'Pay must be a valid number';
+    }
+    
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setJobData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    if (validationErrors[name]) {
+      setValidationErrors(prev => ({
+        ...prev,
+        [name]: ''
       }));
     }
-    setTagInput("");
-    setSuggestedTags([]);
   };
 
-  const removeTag = (tagToRemove) => {
-    setNewJob(prev => ({
-      ...prev,
-      tags: prev.tags.filter(tag => tag !== tagToRemove)
-    }));
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccess(false);
+    
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const formattedData = {
+        ...jobData,
+        jobTitle: jobData.jobTitle.trim(),
+        skills: jobData.skills ? jobData.skills.split(',').map(skill => skill.trim()).filter(Boolean) : [],
+        pay: jobData.pay ? Number(jobData.pay) : null
+      };
+
+      console.log("Final formatted data before sending request:", formattedData); // Debugging line
+
+      const response = await axios.post('http://localhost:4000/api/jobs', formattedData, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      console.log("Server Response:", response.data); // Debugging line
+
+      setSuccess(true);
+      setJobData({
+        jobTitle: '',
+        pay: '',
+        time: '',
+        skills: '',
+        description: '',
+        companyId: jobData.companyId  // Keep companyId unchanged
+      });
+    } catch (err) {
+      console.error("Error response from server:", err.response); // Debugging line
+      setError(err.response?.data?.error || 'Failed to create job. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-lg p-6 lg:p-8 border border-gray-100">
-      <h2 className="text-2xl font-bold mb-6 text-gray-800">Create a New Position</h2>
+    <div className="max-w-lg mx-auto mt-10 p-6 bg-white shadow-lg rounded-lg">
+      <h2 className="text-2xl font-bold text-gray-800 mb-6">Create a Job</h2>
+      
+      {error && (
+        <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-md">
+          {error}
+        </div>
+      )}
+      
+      {success && (
+        <div className="mb-4 p-4 bg-green-50 border border-green-200 text-green-700 rounded-md">
+          Job created successfully!
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-2">
-          <label htmlFor="jobTitle" className="text-sm font-medium text-gray-700">
-            Job Title
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Job Title *
           </label>
-          <Input
-            id="jobTitle"
+          <input
             type="text"
-            placeholder="e.g. Senior Frontend Developer"
-            value={newJob.title}
-            onChange={(e) => setNewJob({ ...newJob, title: e.target.value })}
-            className="w-full focus:ring-2 focus:ring-blue-500"
-            required
+            name="jobTitle"
+            value={jobData.jobTitle}
+            onChange={handleChange}
+            className={`w-full p-2 border rounded-md ${
+              validationErrors.jobTitle ? 'border-red-500' : 'border-gray-300'
+            } focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
           />
-        </div>
-        
-        <div className="space-y-2">
-          <label htmlFor="jobType" className="text-sm font-medium text-gray-700">
-            Job Type
-          </label>
-          <select
-            id="jobType"
-            value={newJob.type}
-            onChange={(e) => setNewJob({ ...newJob, type: e.target.value })}
-            className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-            required
-          >
-            <option value="Full-time">Full-time</option>
-            <option value="Part-time">Part-time</option>
-            <option value="Contract">Contract</option>
-            <option value="Freelance">Freelance</option>
-          </select>
+          {validationErrors.jobTitle && (
+            <p className="mt-1 text-sm text-red-500">{validationErrors.jobTitle}</p>
+          )}
         </div>
 
-        <div className="space-y-2">
-          <label htmlFor="salary" className="text-sm font-medium text-gray-700">
-            Salary Range
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Pay
           </label>
-          <Input
-            id="salary"
+          <input
+            type="number"
+            name="pay"
+            value={jobData.pay}
+            onChange={handleChange}
+            className={`w-full p-2 border rounded-md ${
+              validationErrors.pay ? 'border-red-500' : 'border-gray-300'
+            } focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+          />
+          {validationErrors.pay && (
+            <p className="mt-1 text-sm text-red-500">{validationErrors.pay}</p>
+          )}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Time *
+          </label>
+          <input
+            type="datetime-local"
+            name="time"
+            value={jobData.time}
+            onChange={handleChange}
+            className={`w-full p-2 border rounded-md ${
+              validationErrors.time ? 'border-red-500' : 'border-gray-300'
+            } focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+          />
+          {validationErrors.time && (
+            <p className="mt-1 text-sm text-red-500">{validationErrors.time}</p>
+          )}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Skills (comma-separated)
+          </label>
+          <input
             type="text"
-            placeholder="e.g. $80,000 - $100,000"
-            value={newJob.salary}
-            onChange={(e) => setNewJob({ ...newJob, salary: e.target.value })}
-            className="w-full focus:ring-2 focus:ring-blue-500"
+            name="skills"
+            value={jobData.skills}
+            onChange={handleChange}
+            className="w-full p-2 border rounded-md border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
 
-        <div className="space-y-2">
-          <label htmlFor="location" className="text-sm font-medium text-gray-700">
-            Location
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Job Description *
           </label>
-          <Input
-            id="location"
+          <textarea
+            name="description"
+            value={jobData.description}
+            onChange={handleChange}
+            rows={4}
+            className={`w-full p-2 border rounded-md ${
+              validationErrors.description ? 'border-red-500' : 'border-gray-300'
+            } focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+          />
+          {validationErrors.description && (
+            <p className="mt-1 text-sm text-red-500">{validationErrors.description}</p>
+          )}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Company ID *
+          </label>
+          <input
             type="text"
-            placeholder="e.g. New York, NY (or Remote)"
-            value={newJob.location}
-            onChange={(e) => setNewJob({ ...newJob, location: e.target.value })}
-            className="w-full focus:ring-2 focus:ring-blue-500"
+            name="companyId"
+            value={jobData.companyId}
+            readOnly
+            className="w-full p-2 border rounded-md bg-gray-100 cursor-not-allowed"
           />
         </div>
 
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700">
-            Skills & Technologies
-          </label>
-          <div className="flex flex-wrap gap-2 mb-2">
-            {newJob.tags.map(tag => (
-              <span 
-                key={tag} 
-                className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800"
-              >
-                {tag}
-                <button
-                  type="button"
-                  onClick={() => removeTag(tag)}
-                  className="ml-2 text-blue-600 hover:text-blue-800"
-                >
-                  <X size={14} />
-                </button>
-              </span>
-            ))}
-          </div>
-          <div className="relative">
-            <Input
-              type="text"
-              value={tagInput}
-              onChange={handleTagInput}
-              placeholder="Type to search skills (e.g. React, Python)"
-              className="w-full focus:ring-2 focus:ring-blue-500"
-            />
-            {suggestedTags.length > 0 && (
-              <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-auto">
-                {suggestedTags.map(tag => (
-                  <button
-                    key={tag}
-                    type="button"
-                    onClick={() => addTag(tag)}
-                    className="w-full px-4 py-2 text-left hover:bg-gray-100 focus:outline-none"
-                  >
-                    {tag}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-        
-        <div className="space-y-2">
-          <label htmlFor="jobDescription" className="text-sm font-medium text-gray-700">
-            Job Description
-          </label>
-          <Textarea
-            id="jobDescription"
-            placeholder="Describe the role, requirements, and responsibilities..."
-            value={newJob.description}
-            onChange={(e) => setNewJob({ ...newJob, description: e.target.value })}
-            className="w-full h-32 focus:ring-2 focus:ring-blue-500"
-            required
-          />
-        </div>
-
-        <Button 
-          type="submit" 
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 transition-colors duration-200"
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className={`w-full p-2 rounded-md text-white font-medium
+            ${isSubmitting 
+              ? 'bg-blue-400 cursor-not-allowed' 
+              : 'bg-blue-500 hover:bg-blue-600'
+            }
+          `}
         >
-          Create Position
-        </Button>
+          {isSubmitting ? 'Creating...' : 'Create Job'}
+        </button>
       </form>
     </div>
   );
 };
 
-export default JobForm;
+export default CreateJob;

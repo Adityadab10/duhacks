@@ -37,7 +37,7 @@ const companies = new Map();
 // Company Routes
 app.use('/api/company', companyRoutes);
 app.use("/api", freelancerRoutes);
-app.use("/api", require('./Routes/jobRoutes'));
+app.use("/api", require('./routes/jobRoutes'));
 
 
 const server = http.createServer(app);

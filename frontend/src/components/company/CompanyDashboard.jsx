@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
-import Input from "@/components/ui/input";
 import Button from "@/components/ui/button";
 import { Search, ChevronLeft, ChevronRight, Briefcase, Users, BarChart, Clock } from "lucide-react";
 import JobBoard from "./JobBoard";

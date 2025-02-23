@@ -105,8 +105,7 @@ const CompanyRegistration = () => {
         token: token
     
       }));
-      console.log(userData);
-
+      console.log(localStorage.userData)
       // Show token popup
       setShowTokenPopup(true);
 
