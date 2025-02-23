@@ -12,7 +12,7 @@ import FreelancerProfile from "./components/Freelancer/FreelancerProfile"
 import CreateJobOpening from './components/company/CreateJob';
 import PeerChat from "./components/ChatApp";
 import CompanyRegistration from "./components/company/CompanyRegistration";
-import CDash from "./components/company/CompanyDashboard";
+import CompanyDashboard from "./components/company/CompanyDashboard";
 import JobBoard from "./components/company/JobBoard";
 
 
@@ -25,36 +25,27 @@ function App() {
       <Router>
         <Navbar/>
       
-  
-
-      <Routes>
-        <Route path="/" element={
-          <>
-            <HeroSection/>
-            <Section/>
-            <div className="app-container">
-      
-      <PeerChat userId={userId} chatRoom={chatRoom} />
-    </div>
-            
-          </>
-        } />
-        <Route path="/freelancer/login" element={<FreelancerLogin />} />
-        <Route path="/company/login" element={<CompanyLogin />} />
-        <Route path="/freelancer/register" element={<FreelancerRegister/>}/>
-        <Route path="/freelancer/dashboard" element={<FreelancerHero />} />
-        <Route path="/freelancer/profile" element={<FreelancerProfile />} />
-        <Route path="/company/dashboard" element={<CompanyDashboard />} />
-        <Route path="/company/jobs" element={<JobBoard />} />
-        <Route path="/company/register" element={<CompanyRegistration />} />
-        <Route path="/create-job" element={<CreateJobOpening />} />
-     
-
-
-
-        
-      </Routes>
-    </Router>
+        <Routes>
+          <Route path="/" element={
+            <>
+              <HeroSection/>
+              <Section/>
+              <div className="app-container">
+                <PeerChat userId={userId} chatRoom={chatRoom} />
+              </div>
+            </>
+          } />
+          <Route path="/freelancer/login" element={<FreelancerLogin />} />
+          <Route path="/company/login" element={<CompanyLogin />} />
+          <Route path="/freelancer/register" element={<FreelancerRegister/>}/>
+          <Route path="/freelancer/dashboard" element={<FreelancerHero />} />
+          <Route path="/freelancer/profile" element={<FreelancerProfile />} />
+          <Route path="/company/dashboard" element={<CompanyDashboard />} />
+          <Route path="/company/jobs" element={<JobBoard />} />
+          <Route path="/company/register" element={<CompanyRegistration />} />
+          <Route path="/create-job" element={<CreateJobOpening />} />
+        </Routes>
+      </Router>
     </ChatProvider>
   )
 }
