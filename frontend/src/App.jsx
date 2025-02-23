@@ -18,6 +18,7 @@ import CompanyHero from "./components/company/CompanyHero";
 import { ChatProvider } from "./context/ChatContext"; 
 import Footer from './components/Footer';
 import HowItWorks from './components/HowItWorks';
+import FreelancerDashboard from './components/Freelancer/FreelancerHero';
 
 function App() {
   const urlParams = new URLSearchParams(window.location.search);
@@ -56,6 +57,7 @@ function App() {
             <Route path="/company/hero" element={<CompanyHero />} />
             <Route path="/how-it-works" element={<HowItWorks />} />
             <Route path="/section" element={<Section />} />
+            
           </Routes>
         </main>
       </div>
