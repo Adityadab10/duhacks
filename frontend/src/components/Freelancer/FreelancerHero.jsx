@@ -2,9 +2,11 @@ import React, { useState, useRef, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, MessageCircle, Share2, ArrowRight, Star, Search } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { auth } from '../../firebaseConfig';
+import axios from 'axios';
 
 const ScrollableCategories = ({ categories }) => {
   const scrollRef = useRef(null);
+  
   const [showProgress, setShowProgress] = useState(false);
   const navigate = useNavigate();
 
@@ -83,6 +85,108 @@ const ScrollableCategories = ({ categories }) => {
   );
 };
 
+const ProfileSection = ({ userData }) => {
+  const navigate = useNavigate();
+
+  // Check if important profile fields are empty
+  const hasIncompleteProfile = !userData.bio || !userData.portfolio || !userData.resume || 
+    !userData.github || userData.skills.length === 0;
+
+  // Format payment methods for display
+  const paymentMethods = userData.paymentMethod?.join(', ') || 'Not specified';
+
+  return (
+    <div className="bg-white rounded-lg p-6 shadow-lg">
+      {/* Profile Header */}
+      <div className="flex flex-col items-center mb-6">
+        <img
+          src={userData.profilePicture || "https://via.placeholder.com/100"}
+          alt="Profile"
+          className="w-20 h-20 rounded-full mb-4"
+        />
+        <h2 className="text-xl font-bold text-[#2F4156]">{userData.name}</h2>
+        <p className="text-[#567C8D]">{userData.email}</p>
+        
+        {/* Availability Badge */}
+        <span className={`mt-2 px-3 py-1 rounded-full text-sm ${
+          userData.availability === 'freelance' 
+            ? 'bg-green-100 text-green-800' 
+            : 'bg-gray-100 text-gray-800'
+        }`}>
+          {userData.availability || 'Not specified'}
+        </span>
+      </div>
+
+      {/* Profile Details */}
+      <div className="space-y-4 mb-6">
+        <div className="flex justify-between items-center">
+          <span className="text-[#567C8D]">Hourly Rate</span>
+          <span className="font-bold text-[#2F4156]">
+            {userData.hourlyRate ? `$${userData.hourlyRate}/hr` : 'Not set'}
+          </span>
+        </div>
+        <div className="flex justify-between items-center">
+          <span className="text-[#567C8D]">Rating</span>
+          <div className="flex items-center">
+            <span className="font-bold text-[#2F4156] mr-2">
+              {userData.rating || 'No ratings'}
+            </span>
+            {userData.rating > 0 && (
+              <div className="flex text-yellow-400">
+                {[...Array(Math.floor(userData.rating))].map((_, i) => (
+                  <Star key={i} className="h-4 w-4 fill-current" />
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+        <div className="flex justify-between items-center">
+          <span className="text-[#567C8D]">Reviews</span>
+          <span className="font-bold text-[#2F4156]">{userData.reviews || 0}</span>
+        </div>
+        <div className="flex justify-between items-center">
+          <span className="text-[#567C8D]">Payment Methods</span>
+          <span className="font-bold text-[#2F4156]">{paymentMethods}</span>
+        </div>
+      </div>
+
+      {/* Incomplete Profile Warning */}
+      {hasIncompleteProfile && (
+        <div className="mt-4">
+          <button 
+            onClick={() => navigate('/freelancer/profile')} 
+            className="w-full bg-[#2F4156] text-white px-4 py-2 rounded-md hover:bg-[#567C8D] transition-colors"
+          >
+            Complete Profile
+          </button>
+          <p className="text-sm text-[#567C8D] mt-2 text-center">
+            Some profile information is missing
+          </p>
+        </div>
+      )}
+
+      {/* Skills Section */}
+      <div className="mt-6">
+        <h3 className="text-[#2F4156] font-medium mb-2">Skills</h3>
+        {userData.skills && userData.skills.length > 0 ? (
+          <div className="flex flex-wrap gap-2">
+            {userData.skills.map((skill, index) => (
+              <span 
+                key={index}
+                className="bg-[#C8D9E6] text-[#2F4156] px-3 py-1 rounded-full text-sm"
+              >
+                {skill}
+              </span>
+            ))}
+          </div>
+        ) : (
+          <p className="text-[#567C8D] text-sm">No skills added yet</p>
+        )}
+      </div>
+    </div>
+  );
+};
+
 const FreelancerDashboard = () => {
   const [activeCategory, setActiveCategory] = useState('Web Design');
   const [currentPage, setCurrentPage] = useState(0);
@@ -111,28 +215,51 @@ const FreelancerDashboard = () => {
     return () => unsubscribe();
   }, [navigate]);
 
-  // Retrieve the stored JSON string from localStorage
-const userDataString = localStorage.getItem("user"); // Replace with your actual key
-
-// Parse the JSON string into an object
-if (userDataString) {
-  const userData = JSON.parse(userDataString);
-  const firebaseUID = userData.Uid
-const email = userData.email 
-const name = userData.displayName
-const photoURL = userData.photoURL
-console.log(firebaseUID,email,name,photoURL)
-  // Access specific properties like email
-  // console.log("User Email:", userData);
-} else {
-  console.log("No user data found in localStorage");
-}
-
+  useEffect(() => {
+    const fetchFreelancerProfile = async () => {
+      try {
+        console.log("Fetching Freelancer Profile...");
+  
+        // Retrieve user data from localStorage
+        const user = JSON.parse(localStorage.getItem("user"));
+        if (!user) {
+          console.error("User not found in localStorage.");
+          return;
+        }
+  
+        console.log("Retrieved User from localStorage:", user);
+        console.log("Firebase UID:", user.uid); // Log the Firebase UID
+  
+        // Make the API request
+        const url = `http://localhost:4000/api/profile/${user.uid}`;
+        console.log("Requesting API:", url);
+  
+        const response = await axios.get(url);
+  
+        console.log("API Response:", response);
+        console.log("Fetched Freelancer Profile:", response.data);
+  
+        setUserData(response.data);
+      } catch (error) {
+        console.error("Error fetching freelancer profile:", error);
+        
+        // Check if error has response (API error) or it's a network error
+        if (error.response) {
+          console.error("Server responded with:", error.response.status, error.response.data);
+        } else if (error.request) {
+          console.error("No response received from server:", error.request);
+        } else {
+          console.error("Axios request error:", error.message);
+        }
+      }
+    };
+  
+    fetchFreelancerProfile();
+  }, []);
 
   const categories = [
     { name: 'Web Design', price: '450$', count: '15' },
     { name: 'App Design', price: '300$', count: '8' },
-    
   ];
 
   const projects = [
@@ -157,7 +284,6 @@ console.log(firebaseUID,email,name,photoURL)
       budget: '450$',
       deadline: '2025-03-05'
     },
-  
   ];
 
   const projectsPerPage = 3;
@@ -196,54 +322,25 @@ console.log(firebaseUID,email,name,photoURL)
         <div className="grid grid-cols-4 gap-8">
           {/* Profile Section */}
           <div className="col-span-1">
-            <div className="bg-white rounded-lg p-6 shadow-lg">
-              <div className="flex flex-col items-center mb-6">
-                <img
-                  src={userData.photoURL || "https://via.placeholder.com/100"}
-                  alt="Profile"
-                  className="w-20 h-20 rounded-full mb-4"
-                />
-                <h2 className="text-xl font-bold text-[#2F4156]">{userData.displayName}</h2>
-                <p className="text-[#567C8D]">{userData.email}</p>
-              </div>
+            <ProfileSection userData={userData} />
+            {/* Statistics Section */}
+            <div className="bg-white rounded-lg p-6 shadow-lg mt-8">
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <span className="text-[#567C8D]">Avg Earnings</span>
-                  <span className="font-bold text-[#2F4156]">500$</span>
+                  <span className="text-[#567C8D]">Total Applications</span>
+                  <span className="font-bold text-[#2F4156]">50</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-[#567C8D]">Projects Completed</span>
-                  <span className="font-bold text-[#2F4156]">24</span>
+                  <span className="text-[#567C8D]">Hired Jobs</span>
+                  <span className="font-bold text-[#2F4156]">20</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-[#567C8D]">Rating</span>
-                  <div className="flex text-yellow-400">
-                    {[...Array(4)].map((_, i) => (
-                      <Star key={i} className="h-4 w-4 fill-current" />
-                    ))}
-                  </div>
+                  <span className="text-[#567C8D]">Completion Rate</span>
+                  <span className="font-bold text-[#2F4156]">80%</span>
                 </div>
-              </div>
-
-              {/* Statistics Section */}
-              <div className="bg-white rounded-lg p-6 shadow-lg mt-8">
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-[#567C8D]">Total Applications</span>
-                    <span className="font-bold text-[#2F4156]">50</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-[#567C8D]">Hired Jobs</span>
-                    <span className="font-bold text-[#2F4156]">20</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-[#567C8D]">Completion Rate</span>
-                    <span className="font-bold text-[#2F4156]">80%</span>
-                  </div>
-                  <button className="bg-[#2F4156] text-white px-4 py-2 rounded-md hover:bg-[#567C8D] transition-colors w-full">
-                    Track All Applications
-                  </button>
-                </div>
+                <button className="bg-[#2F4156] text-white px-4 py-2 rounded-md hover:bg-[#567C8D] transition-colors w-full">
+                  Track All Applications
+                </button>
               </div>
             </div>
           </div>

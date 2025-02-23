@@ -14,7 +14,7 @@ import PeerChat from "./components/ChatApp";
 import CompanyRegistration from "./components/company/CompanyRegistration";
 import CDash from "./components/company/CompanyDashboard";
 import JobBoard from "./components/company/JobBoard";
-
+import CompanyDashboard from './components/company/CompanyDashboard';
 
 function App() {
   const urlParams = new URLSearchParams(window.location.search);

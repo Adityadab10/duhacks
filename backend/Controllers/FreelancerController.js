@@ -1,4 +1,3 @@
-// filepath: /C:/Users/russe/Desktop/duhacks/backend/controllers/FreelancerController.js
 const Freelancer = require("../models/Freelancer");
 
 const registerFreelancer = async (req, res) => {
@@ -10,7 +9,7 @@ const registerFreelancer = async (req, res) => {
       name,
       profilePicture,
       resume,
-      skills,
+      skills, 
       portfolio,
       hourlyRate,
       availability,
@@ -53,4 +52,53 @@ const registerFreelancer = async (req, res) => {
   }
 };
 
-module.exports = { registerFreelancer };
+const getFreelancerProfile = async (req, res) => {
+  try {
+    console.log("Received request to fetch freelancer profile.");
+
+    // Extract the firebaseUID from request parameters
+    const { firebaseUID } = req.params;
+    console.log("Extracted firebaseUID from params:", firebaseUID);
+
+    if (!firebaseUID) {
+      console.error("firebaseUID is missing in request parameters.");
+      return res.status(400).json({ message: "firebaseUID is required" });
+    }
+
+    // Query the database for a freelancer with the given firebaseUID
+    console.log("Searching for freelancer in database...");
+    const freelancer = await Freelancer.findOne({ firebaseUID });
+
+    if (!freelancer) {
+      console.warn(`No freelancer found with firebaseUID: ${firebaseUID}`);
+      return res.status(404).json({ message: "Freelancer not found" });
+    }
+
+    console.log("Freelancer profile found:", freelancer);
+    res.status(200).json(freelancer);
+  } catch (error) {
+    console.error("Error fetching freelancer profile:", error);
+    res.status(500).json({ message: "Internal Server Error", error: error.message });
+  }
+};
+
+const updateFreelancerProfile = async (req, res) => {
+  try {
+    const { firebaseUID } = req.params;
+    const updates = req.body;
+
+    const freelancer = await Freelancer.findOneAndUpdate({ firebaseUID }, updates, { new: true });
+
+    if (!freelancer) {
+      return res.status(404).json({ message: "Freelancer not found" });
+    }
+
+    res.status(200).json(freelancer);
+  } catch (error) {
+    console.error("Error updating freelancer profile:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+module.exports = { registerFreelancer, getFreelancerProfile,updateFreelancerProfile };
