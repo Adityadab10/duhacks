@@ -15,7 +15,7 @@ import CompanyDashboard from "./components/company/CompanyDashboard";
 import JobBoard from "./components/company/JobBoard";
 import AboutUs from "./components/ui/AboutUs";
 import CompanyHero from "./components/company/CompanyHero";
-
+import { ChatProvider } from "./context/ChatContext"; 
 
 function App() {
   const urlParams = new URLSearchParams(window.location.search);
@@ -23,10 +23,11 @@ function App() {
   const chatRoom = "room1";
   
   return (
+    <ChatProvider>
       <Router>
       <div className="min-h-screen flex flex-col">
           <Navbar />
-          {/* <ChatApp/> */}
+          
           
         <main className="flex-grow">
           <Routes>
@@ -54,6 +55,7 @@ function App() {
         </main>
       </div>
     </Router>
+    </ChatProvider>
   )
 }
 
