@@ -10,7 +10,7 @@ export default function Navbar() {
   const navItems = [
     { path: "/", label: "Home" },
     { path: "/about", label: "About" },
-    { path: "/section", label: "Services" }, // Changed path to /section
+    { path: "/how-it-works", label: "Services" }, // Changed path to /section
     { path: "/contact", label: "Contact" }
   ];
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import ChatDrawer from "../ChatDrawer";
-import ChatList from "../ChatList";
+
+
 import { MessageCircle } from 'lucide-react';
 
 const FreelancerDashboard = () => {
@@ -52,10 +52,7 @@ const FreelancerDashboard = () => {
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Chat List */}
-            <ChatList 
-              userId={userId}
-              onChatSelect={() => setIsChatOpen(true)}
-            />
+          
             
             {/* Quick Stats */}
             <div className="bg-white rounded-lg shadow-lg p-6">
@@ -66,12 +63,7 @@ const FreelancerDashboard = () => {
         </div>
       </div>
 
-      {/* Chat Drawer */}
-      <ChatDrawer
-        userId={userId}
-        isOpen={isChatOpen}
-        onClose={() => setIsChatOpen(false)}
-      />
+     
     </div>
   );
 };

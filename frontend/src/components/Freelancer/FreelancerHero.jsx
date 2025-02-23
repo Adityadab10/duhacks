@@ -445,12 +445,8 @@ const FreelancerDashboard = () => {
       </div>
 
       {/* Chat Drawer */}
-      <ChatDrawer
-        isOpen={isChatOpen}
-        onClose={() => setIsChatOpen(false)}
-        userId={userId}
-      />
-      <ChatList onChatSelect={handleStartChat} />
+      
+     
     </div>
   );
 };
