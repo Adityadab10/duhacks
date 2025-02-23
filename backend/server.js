@@ -48,130 +48,99 @@ const io = new Server(server, {
 
 const activeUsers = new Map();
 
+// Chat message routes
+app.get("/api/messages/:roomId", async (req, res) => {
+  try {
+    const messages = await Message.find({ room: req.params.roomId })
+      .sort({ timestamp: -1 })
+      .limit(50);
+    res.json(messages.reverse());
+  } catch (error) {
+    console.error("Error fetching messages:", error);
+    res.status(500).json({ error: "Error fetching messages" });
+  }
+});
+
+app.post("/api/messages", async (req, res) => {
+  try {
+    const { roomId, sender, content } = req.body;
+    const message = new Message({
+      room: roomId,
+      sender,
+      content,
+      timestamp: new Date()
+    });
+    await message.save();
+    res.status(201).json(message);
+  } catch (error) {
+    console.error("Error saving message:", error);
+    res.status(500).json({ error: "Error saving message" });
+  }
+});
+
 io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
 
-  // Handle joining a chat room
-  socket.on("joinRoom", async ({ room, userId, userType }) => {
+  socket.on("joinRoom", async ({ roomId, userId, userType }) => {
     try {
-      socket.join(room);
+      socket.join(roomId);
       
       // Store user information
-      activeUsers.set(socket.id, { userId, room });
+      activeUsers.set(socket.id, { userId, roomId, userType });
       
-      let chatApp = await ChatApp.findOne({ roomId: room });
-      if (!chatApp) {
-        chatApp = new ChatApp({
-          roomId: room,
-          participants: [{
-            userId,
-            userType,
-            lastSeen: new Date()
-          }]
-        });
-      } else {
-        const participant = chatApp.participants.find(p => p.userId === userId);
-        if (participant) {
-          participant.lastSeen = new Date();
-        } else {
-          chatApp.participants.push({
-            userId,
-            userType,
-            lastSeen: new Date()
-          });
-        }
-      }
-      await chatApp.save();
+      // Notify room about new user
+      io.to(roomId).emit("userJoined", {
+        userId,
+        userType,
+        onlineUsers: Array.from(activeUsers.values())
+          .filter(user => user.roomId === roomId)
+          .map(user => user.userId)
+      });
 
-      const recentMessages = await Message.find({ room })
+      // Send recent messages
+      const messages = await Message.find({ room: roomId })
         .sort({ timestamp: -1 })
         .limit(50);
-      
-      socket.emit("recentMessages", recentMessages.reverse());
-      io.to(room).emit("userJoined", userId);
-      
-      console.log(`User ${userId} joined room: ${room}`);
+      socket.emit("recentMessages", messages.reverse());
     } catch (err) {
-      console.error('Error in joinRoom:', err);
+      console.error("Error in joinRoom:", err);
+      socket.emit("error", "Failed to join room");
     }
   });
 
-  // Handle messages
-  socket.on("message", async ({ room, message }) => {
+  socket.on("message", async (messageData) => {
     try {
-      const newMessage = new Message({
-        room,
-        sender: message.userId,
-        content: message.content,
-        timestamp: new Date(),
-        messageType: 'text',
-        readBy: [{ userId: message.userId, readAt: new Date() }]
+      const { roomId, sender, content } = messageData;
+      const message = new Message({
+        room: roomId,
+        sender,
+        content,
+        timestamp: new Date()
       });
-      await newMessage.save();
-
-      await ChatApp.findOneAndUpdate(
-        { roomId: room },
-        {
-          lastMessage: {
-            content: message.content,
-            sender: message.userId,
-            timestamp: new Date()
-          },
-          updatedAt: new Date()
-        }
-      );
-
-      io.to(room).emit("message", newMessage);
+      await message.save();
+      io.to(roomId).emit("message", message);
     } catch (err) {
-      console.error('Error in message handling:', err);
+      console.error("Error sending message:", err);
+      socket.emit("error", "Failed to send message");
     }
   });
 
-  // Handle typing status
-  socket.on("typing", ({ room, userId, isTyping }) => {
-    socket.to(room).emit("userTyping", { userId, isTyping });
-  });
-
-  // Handle leaving a room
-  socket.on("leaveRoom", async ({ room, userId }) => {
-    try {
-      await handleUserLeaving(socket, room, userId);
-    } catch (err) {
-      console.error('Error in leaveRoom:', err);
-    }
-  });
-
-  // Handle disconnection
-  socket.on("disconnect", async () => {
-    try {
-      const userInfo = activeUsers.get(socket.id);
-      if (userInfo) {
-        const { room, userId } = userInfo;
-        await handleUserLeaving(socket, room, userId);
-        activeUsers.delete(socket.id);
-      }
-      console.log("User disconnected:", socket.id);
-    } catch (err) {
-      console.error('Error in disconnect:', err);
+  socket.on("disconnect", () => {
+    const userData = activeUsers.get(socket.id);
+    if (userData) {
+      const { roomId } = userData;
+      activeUsers.delete(socket.id);
+      
+      // Notify room about user leaving
+      io.to(roomId).emit("userLeft", {
+        userId: userData.userId,
+        onlineUsers: Array.from(activeUsers.values())
+          .filter(user => user.roomId === roomId)
+          .map(user => user.userId)
+      });
     }
   });
 });
-
-// Helper function to handle user leaving
-async function handleUserLeaving(socket, room, userId) {
-  try {
-    await ChatApp.findOneAndUpdate(
-      { roomId: room, 'participants.userId': userId },
-      { 'participants.$.lastSeen': new Date() }
-    );
-
-    socket.to(room).emit("userLeft", userId);
-    socket.leave(room);
-    console.log(`User ${userId} left room: ${room}`);
-  } catch (err) {
-    console.error('Error in handleUserLeaving:', err);
-  }
-}
 
 // Health check endpoint
 app.get("/health", (req, res) => {
@@ -185,5 +154,3 @@ const PORT = process.env.PORT || 4000;
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
-
-

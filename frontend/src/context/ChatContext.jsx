@@ -1,135 +1,115 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { io } from 'socket.io-client';
+import React, { createContext, useState, useContext, useEffect } from "react";
+import { io } from "socket.io-client";
+import axios from "axios";
 
+// Create Chat Context
 const ChatContext = createContext();
 
-export const useChat = () => useContext(ChatContext);
+// Initialize socket connection
+const socket = io("http://localhost:4000");
+
+// Test data for development
+const testChats = [
+  {
+    roomId: "test_room_1",
+    partnerId: "test-freelancer-1",
+    partnerName: "John Doe",
+    lastMessage: "Hi, I'm interested in your project",
+    isOnline: true,
+  }
+];
+
+const testMessages = {
+  test_room_1: [
+    {
+      id: 1,
+      sender: "test-freelancer-1",
+      content: "Hi, I'm interested in your project",
+      timestamp: new Date(Date.now() - 3600000).toISOString(),
+    },
+    {
+      id: 2,
+      sender: "company-1",
+      content: "Great! Can you tell me about your experience?",
+      timestamp: new Date(Date.now() - 1800000).toISOString(),
+    },
+  ]
+};
 
 export const ChatProvider = ({ children }) => {
-  const [socket, setSocket] = useState(null);
-  const [activeChats, setActiveChats] = useState([]);
+  const [messages, setMessages] = useState(testMessages);
   const [currentChatRoom, setCurrentChatRoom] = useState(null);
-  const [messages, setMessages] = useState({});
-  const [onlineUsers, setOnlineUsers] = useState(new Set());
-  const [loading, setLoading] = useState(false);
+  const [activeChats, setActiveChats] = useState(testChats);
 
   useEffect(() => {
-    const newSocket = io('http://localhost:4000');
-    setSocket(newSocket);
-
-    return () => newSocket.disconnect();
-  }, []);
-
-  useEffect(() => {
-    if (!socket) return;
-
-    socket.on('message', (message) => {
-      setMessages(prev => ({
-        ...prev,
-        [message.room]: [...(prev[message.room] || []), message]
+    socket.on("message", (message) => {
+      setMessages((prevMessages) => ({
+        ...prevMessages,
+        [message.chatRoomId]: [...(prevMessages[message.chatRoomId] || []), message],
       }));
     });
 
-    socket.on('recentMessages', (messages) => {
-      if (messages.length > 0) {
-        const roomId = messages[0].room;
-        setMessages(prev => ({
-          ...prev,
-          [roomId]: messages
-        }));
-      }
-    });
-
-    socket.on('userJoined', (userId) => {
-      setOnlineUsers(prev => new Set([...prev, userId]));
-    });
-
-    socket.on('userLeft', (userId) => {
-      setOnlineUsers(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(userId);
-        return newSet;
-      });
+    socket.on("userJoined", ({ userId, userType, onlineUsers }) => {
+      setActiveChats(prev => prev.map(chat => ({
+        ...chat,
+        isOnline: onlineUsers.includes(chat.partnerId)
+      })));
     });
 
     return () => {
-      socket.off('message');
-      socket.off('recentMessages');
-      socket.off('userJoined');
-      socket.off('userLeft');
+      socket.off("message");
+      socket.off("userJoined");
     };
-  }, [socket]);
+  }, []);
 
-  const fetchChatRooms = async (userId) => {
-    try {
-      setLoading(true);
-      const response = await fetch(`http://localhost:4000/api/chat/rooms/${userId}`);
-      const data = await response.json();
-      setActiveChats(data);
-    } catch (error) {
-      console.error('Error fetching chat rooms:', error);
-    } finally {
-      setLoading(false);
+  const startChat = (userId, recipientId) => {
+    const chatRoomId = [userId, recipientId].sort().join("_");
+    setCurrentChatRoom(chatRoomId);
+    
+    // Add to active chats if not exists
+    if (!activeChats.find(chat => chat.partnerId === recipientId)) {
+      setActiveChats(prev => [...prev, {
+        roomId: chatRoomId,
+        partnerId: recipientId,
+        partnerName: `User ${recipientId}`,
+        isOnline: false
+      }]);
     }
+    
+    socket.emit("joinRoom", { roomId: chatRoomId, userId });
   };
 
-  const fetchMessages = async (roomId) => {
-    try {
-      setLoading(true);
-      const response = await fetch(`http://localhost:4000/api/chat/messages/${roomId}`);
-      const data = await response.json();
-      setMessages(prev => ({
-        ...prev,
-        [roomId]: data
-      }));
-    } catch (error) {
-      console.error('Error fetching messages:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const sendMessage = (userId, recipientId, content) => {
+    if (!currentChatRoom) return;
 
-  const startChat = (userId1, userId2, userType) => {
-    // Create a unique room ID by sorting and joining the user IDs
-    const participants = [userId1, userId2].sort();
-    const roomId = `chat_${participants.join('_')}`;
-
-    // Join the room
-    if (socket) {
-      socket.emit('joinRoom', { room: roomId, userId: userId1, userType });
-    }
-
-    setCurrentChatRoom(roomId);
-    return roomId;
-  };
-
-  const sendMessage = (roomId, userId, content) => {
-    if (!socket || !roomId) return;
-
-    const message = {
-      room: roomId,
-      message: {
-        userId,
-        content,
-        timestamp: new Date().toISOString()
-      }
+    const messageData = {
+      sender: userId,
+      receiver: recipientId,
+      content,
+      chatRoomId: currentChatRoom,
+      timestamp: new Date().toISOString(),
     };
 
-    socket.emit('message', message);
+    socket.emit("message", messageData);
+    setMessages((prevMessages) => ({
+      ...prevMessages,
+      [currentChatRoom]: [...(prevMessages[currentChatRoom] || []), messageData],
+    }));
+
+    // Update last message in active chats
+    setActiveChats(prev => prev.map(chat => 
+      chat.partnerId === recipientId 
+        ? { ...chat, lastMessage: content }
+        : chat
+    ));
   };
 
   const value = {
-    socket,
-    activeChats,
-    currentChatRoom,
     messages,
-    onlineUsers,
-    loading,
+    currentChatRoom,
+    activeChats,
     startChat,
-    sendMessage,
-    setCurrentChatRoom,
-    fetchChatRooms,
-    fetchMessages
+    sendMessage
   };
 
   return (
@@ -137,4 +117,8 @@ export const ChatProvider = ({ children }) => {
       {children}
     </ChatContext.Provider>
   );
+};
+
+export const useChat = () => {
+  return useContext(ChatContext);
 };
