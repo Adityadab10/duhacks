@@ -20,13 +20,14 @@ const registerFreelancer = async (req, res) => {
     } = req.body;
 
     // Check if the freelancer already exists
-    const existingFreelancer = await Freelancer.findOne({ firebaseUID });
-    if (existingFreelancer) {
-      return res.status(400).json({ message: "Freelancer already exists" });
+    let freelancer = await Freelancer.findOne({ firebaseUID });
+
+    if (freelancer) {
+      return res.status(200).json({ message: "Freelancer already exists", freelancer });
     }
 
     // Create a new freelancer
-    const newFreelancer = new Freelancer({
+    freelancer = new Freelancer({
       firebaseUID,
       bio,
       email,
@@ -43,14 +44,15 @@ const registerFreelancer = async (req, res) => {
       reviews,
     });
 
-    await newFreelancer.save();
+    await freelancer.save();
 
-    res.status(201).json({ message: "Freelancer registered successfully", freelancer: newFreelancer });
+    res.status(201).json({ message: "Freelancer registered successfully", freelancer });
   } catch (error) {
     console.error("Registration Error:", error);
     res.status(500).json({ message: "Internal Server Error", error: error.message });
   }
 };
+
 
 const getFreelancerProfile = async (req, res) => {
   try {

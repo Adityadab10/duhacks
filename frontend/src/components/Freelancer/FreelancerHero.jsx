@@ -88,10 +88,106 @@ const ScrollableCategories = ({ categories }) => {
   );
 };
 
-const handleStartChat = (chat) => {
-  console.log("Opening chat:", chat); // Debugging log
-  setSelectedChat(chat);
-  setShowMessagesSidebar(false);
+const ProfileSection = ({ userData }) => {
+  const navigate = useNavigate();
+
+  // Check if important profile fields are empty
+  const hasIncompleteProfile = !userData.bio || !userData.portfolio || !userData.resume || 
+    !userData.github || userData.skills.length === 0;
+
+  // Format payment methods for display
+  const paymentMethods = userData.paymentMethod?.join(', ') || 'Not specified';
+
+  return (
+    <div className="bg-white rounded-lg p-6 shadow-lg">
+      {/* Profile Header */}
+      <div className="flex flex-col items-center mb-6">
+        <img
+          src={userData.profilePicture}
+          alt="Profile"
+          className="w-20 h-20 rounded-full mb-4"
+        />
+        <h2 className="text-xl font-bold text-[#2F4156]">{userData.name}</h2>
+        <p className="text-[#567C8D]">{userData.email}</p>
+        
+        {/* Availability Badge */}
+        <span className={`mt-2 px-3 py-1 rounded-full text-sm ${
+          userData.availability === 'freelance' 
+            ? 'bg-green-100 text-green-800' 
+            : 'bg-gray-100 text-gray-800'
+        }`}>
+          {userData.availability || 'Not specified'}
+        </span>
+      </div>
+
+      {/* Profile Details */}
+      <div className="space-y-4 mb-6">
+        <div className="flex justify-between items-center">
+          <span className="text-[#567C8D]">Hourly Rate</span>
+          <span className="font-bold text-[#2F4156]">
+            {userData.hourlyRate || 'Not set'}
+          </span>
+        </div>
+        <div className="flex justify-between items-center">
+          <span className="text-[#567C8D]">Rating</span>
+          <div className="flex items-center">
+            <span className="font-bold text-[#2F4156] mr-2">
+              {userData.rating || 'No ratings'}
+            </span>
+            {userData.rating > 0 && (
+              <div className="flex text-yellow-400">
+                {[...Array(Math.floor(userData.rating))].map((_, i) => (
+                  <Star key={i} className="h-4 w-4 fill-current" />
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+        <div className="flex justify-between items-center">
+          <span className="text-[#567C8D]">Reviews</span>
+          <span className="font-bold text-[#2F4156]">{userData.reviews || 0}</span>
+        </div>
+        <div className="flex justify-between items-center">
+          <span className="text-[#567C8D]">Payment Methods</span>
+          <span className="font-bold text-[#2F4156]">{paymentMethods}</span>
+        </div>
+      </div>
+
+      {/* Incomplete Profile Warning */}
+      {hasIncompleteProfile && (
+        <div className="mt-4">
+          <button 
+            onClick={() => navigate('/freelancer/profile')} 
+            className="w-full bg-[#2F4156] text-white px-4 py-2 rounded-md hover:bg-[#567C8D] transition-colors"
+          >
+            Complete Profile
+          </button>
+          <p className="text-sm text-[#567C8D] mt-2 text-center">
+            Some profile information is missing
+          </p>
+        </div>
+      )}
+
+      {/* Skills Section */}
+      <div className="mt-6">
+        <h3 className="text-[#2F4156] font-medium mb-2">Skills</h3>
+        {userData.skills && userData.skills.length > 0 ? (
+          <div className="flex flex-wrap gap-2">
+            {userData.skills.map((skill, index) => (
+              <span 
+                key={index}
+                className="bg-[#C8D9E6] text-[#2F4156] px-3 py-1 rounded-full text-sm"
+              >
+                {skill}
+              </span>
+            ))}
+          </div>
+        ) : (
+          <p className="text-[#567C8D] text-sm">No skills added yet</p>
+        )}
+      </div>
+    </div>
+  );
 };
 
 
@@ -112,7 +208,17 @@ const FreelancerDashboard = () => {
   const [userData, setUserData] = useState({
     displayName: '',
     photoURL: null,
-    email: ''
+    email: '',
+    bio: '',
+    portfolio: '',
+    resume: '',
+    github: '',
+    skills: [],
+    hourlyRate: '',
+    rating: 0,
+    reviews: 0,
+    paymentMethod: [],
+    availability: ''
   });
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [userId, setUserId] = useState(null);
@@ -121,11 +227,12 @@ const FreelancerDashboard = () => {
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
       if (user) {
-        setUserData({
+        setUserData((prevData) => ({
+          ...prevData,
           displayName: user.displayName || 'Update your name',
           photoURL: user.photoURL,
           email: user.email
-        });
+        }));
       } else {
         navigate('/freelancer/login');
       }
