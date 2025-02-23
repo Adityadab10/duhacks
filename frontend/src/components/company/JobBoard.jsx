@@ -1,12 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { MessageCircle, Search } from 'lucide-react';
+import { MessageCircle, Search, X } from 'lucide-react';
 import JobForm from "./JobForm";
+
+// Same tags as in JobForm for consistency
+const AVAILABLE_TAGS = [
+  "React", "Angular", "Vue", "Node.js", "Python", "Java", "JavaScript",
+  "Frontend", "Backend", "Full Stack", "DevOps", "UI/UX", "Mobile",
+  "AWS", "Database", "AI/ML", "Blockchain", "Cloud", "Security"
+];
 
 const JobBoard = ({ onChatWithFreelancer }) => {
   const [jobs, setJobs] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedTags, setSelectedTags] = useState([]);
   const [sortBy, setSortBy] = useState("newest");
   const [showJobForm, setShowJobForm] = useState(false);
+  const [showTagSuggestions, setShowTagSuggestions] = useState(false);
 
   useEffect(() => {
     loadJobs();
@@ -22,13 +31,42 @@ const JobBoard = ({ onChatWithFreelancer }) => {
     setShowJobForm(false);
   };
 
+  const toggleTag = (tag) => {
+    setSelectedTags(prev => 
+      prev.includes(tag)
+        ? prev.filter(t => t !== tag)
+        : [...prev, tag]
+    );
+  };
+
+  const getSuggestedTags = () => {
+    return AVAILABLE_TAGS.filter(tag => 
+      !selectedTags.includes(tag) &&
+      tag.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  };
+
   const filteredJobs = jobs
     .filter(job => {
+      // If there are selected tags, job must match ALL selected tags
+      if (selectedTags.length > 0) {
+        const hasAllTags = selectedTags.every(tag => 
+          job.tags && job.tags.includes(tag)
+        );
+        if (!hasAllTags) return false;
+      }
+
+      // Then filter by search term if present
+      if (!searchTerm) return true;
+      
       const searchLower = searchTerm.toLowerCase();
       return (
         job.title.toLowerCase().includes(searchLower) ||
         job.company.toLowerCase().includes(searchLower) ||
-        job.description.toLowerCase().includes(searchLower)
+        job.description.toLowerCase().includes(searchLower) ||
+        (job.tags && job.tags.some(tag => 
+          tag.toLowerCase().includes(searchLower)
+        ))
       );
     })
     .sort((a, b) => {
@@ -55,25 +93,77 @@ const JobBoard = ({ onChatWithFreelancer }) => {
           </button>
         </div>
 
-        <div className="flex flex-col md:flex-row gap-4 mb-6">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-            <input 
-              type="text" 
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search by title, company, or keywords" 
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+        <div className="space-y-4 mb-6">
+          {/* Search and Sort */}
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+              <input 
+                type="text" 
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setShowTagSuggestions(true);
+                }}
+                onFocus={() => setShowTagSuggestions(true)}
+                placeholder="Search by title, company, or skills" 
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              {showTagSuggestions && searchTerm && (
+                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-auto">
+                  {getSuggestedTags().map(tag => (
+                    <button
+                      key={tag}
+                      onClick={() => {
+                        toggleTag(tag);
+                        setSearchTerm("");
+                        setShowTagSuggestions(false);
+                      }}
+                      className="w-full px-4 py-2 text-left hover:bg-gray-100 focus:outline-none"
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="newest">Newest First</option>
+              <option value="oldest">Oldest First</option>
+            </select>
           </div>
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="newest">Newest First</option>
-            <option value="oldest">Oldest First</option>
-          </select>
+
+          {/* Selected Tags */}
+          {selectedTags.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {selectedTags.map(tag => (
+                <span 
+                  key={tag}
+                  className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800"
+                >
+                  {tag}
+                  <button
+                    onClick={() => toggleTag(tag)}
+                    className="ml-2 text-blue-600 hover:text-blue-800"
+                  >
+                    <X size={14} />
+                  </button>
+                </span>
+              ))}
+              {selectedTags.length > 0 && (
+                <button
+                  onClick={() => setSelectedTags([])}
+                  className="text-sm text-gray-600 hover:text-gray-900"
+                >
+                  Clear all
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         {showJobForm ? (
@@ -106,6 +196,21 @@ const JobBoard = ({ onChatWithFreelancer }) => {
                     </p>
                   )}
                 </div>
+
+                {/* Tags */}
+                {job.tags && job.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {job.tags.map(tag => (
+                      <span
+                        key={tag}
+                        className="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800 cursor-pointer hover:bg-gray-200"
+                        onClick={() => toggleTag(tag)}
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
 
                 <div className="prose prose-sm text-gray-500 mb-4">
                   <p>{job.description}</p>
@@ -140,7 +245,11 @@ const JobBoard = ({ onChatWithFreelancer }) => {
             ))}
             {filteredJobs.length === 0 && (
               <div className="col-span-full text-center py-8 text-gray-500">
-                {searchTerm ? 'No jobs match your search' : 'No job postings yet. Create your first job posting!'}
+                {selectedTags.length > 0 
+                  ? `No jobs match the selected tags: ${selectedTags.join(", ")}`
+                  : searchTerm 
+                    ? 'No jobs match your search' 
+                    : 'No job postings yet. Create your first job posting!'}
               </div>
             )}
           </div>
