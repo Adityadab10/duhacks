@@ -5,6 +5,8 @@ import { auth } from '../../firebaseConfig';
 import ChatDrawer from '../ChatDrawer';
 import ChatList from '../ChatList';
 import { useChat } from '../../context/ChatContext';
+import ChatComponent from '../components/ChatComponent';
+
 
 const ScrollableCategories = ({ categories }) => {
   const scrollRef = useRef(null);
@@ -399,21 +401,14 @@ console.log(firebaseUID,email,name,photoURL)
         )}
 
         {selectedChat && (
-          <div className="absolute bottom-16 left-0 w-80 bg-white rounded-t-lg shadow-xl" style={{ zIndex: 9999 }}>
-            <div className="flex items-center justify-between p-3 border-b">
-              <h3 className="font-semibold">
-                {activeChats.find(chat => chat.id === selectedChat)?.name || "Chat"}
-              </h3>
-              <button 
-                onClick={handleCloseChat}
-                className="text-gray-500 hover:text-gray-700"
-              >
+          <div className="fixed right-0 top-0 h-full w-80 bg-white shadow-lg p-4 overflow-y-auto">
+            <div className="flex justify-between items-center border-b pb-2 mb-4">
+              <h3 className="font-semibold">Chat with {selectedChat.name}</h3>
+              <button onClick={handleCloseChat} className="text-gray-500 hover:text-gray-700">
                 <X size={20} />
               </button>
             </div>
-            <div className="h-96">
-              <ChatApp userId={userId} partnerId={selectedChat} />
-            </div>
+            <ChatApp userId={userData.email} partnerId={selectedChat.id} />
           </div>
         )}
       </div>
