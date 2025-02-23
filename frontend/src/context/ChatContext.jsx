@@ -1,124 +1,119 @@
-import React, { createContext, useState, useContext, useEffect } from "react";
-import { io } from "socket.io-client";
-import axios from "axios";
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
-// Create Chat Context
 const ChatContext = createContext();
 
-// Initialize socket connection
-const socket = io("http://localhost:4000");
+// Mock users for testing
+const MOCK_USERS = {
+  'company-1': {
+    id: 'company-1',
+    name: 'Tech Innovators Inc.',
+    role: 'company'
+  },
+  'freelancer-1': {
+    id: 'freelancer-1',
+    name: 'John Doe',
+    role: 'freelancer'
+  }
+};
 
-// Test data for development
-const testChats = [
+// Initial messages for testing
+const INITIAL_MESSAGES = [
   {
-    roomId: "test_room_1",
-    partnerId: "test-freelancer-1",
-    partnerName: "John Doe",
-    lastMessage: "Hi, I'm interested in your project",
-    isOnline: true,
+    id: 1,
+    senderId: 'company-1',
+    receiverId: 'freelancer-1',
+    content: "Hi John! We loved your portfolio. Would you be interested in discussing a React project?",
+    timestamp: new Date(Date.now() - 86400000).toISOString()
+  },
+  {
+    id: 2,
+    senderId: 'freelancer-1',
+    receiverId: 'company-1',
+    content: "Thank you! Yes, I'd be very interested in learning more about the project.",
+    timestamp: new Date(Date.now() - 82800000).toISOString()
   }
 ];
 
-const testMessages = {
-  test_room_1: [
-    {
-      id: 1,
-      sender: "test-freelancer-1",
-      content: "Hi, I'm interested in your project",
-      timestamp: new Date(Date.now() - 3600000).toISOString(),
-    },
-    {
-      id: 2,
-      sender: "company-1",
-      content: "Great! Can you tell me about your experience?",
-      timestamp: new Date(Date.now() - 1800000).toISOString(),
-    },
-  ]
-};
+export function ChatProvider({ children }) {
+  const [messages, setMessages] = useState(() => {
+    const stored = localStorage.getItem('chatMessages');
+    return stored ? JSON.parse(stored) : INITIAL_MESSAGES;
+  });
 
-export const ChatProvider = ({ children }) => {
-  const [messages, setMessages] = useState(testMessages);
-  const [currentChatRoom, setCurrentChatRoom] = useState(null);
-  const [activeChats, setActiveChats] = useState(testChats);
+  const [chats, setChats] = useState(() => {
+    const stored = localStorage.getItem('chats');
+    return stored ? JSON.parse(stored) : {
+      'company-1': ['freelancer-1'],
+      'freelancer-1': ['company-1']
+    };
+  });
 
+  // Save messages to localStorage whenever they change
   useEffect(() => {
-    socket.on("message", (message) => {
-      setMessages((prevMessages) => ({
-        ...prevMessages,
-        [message.chatRoomId]: [...(prevMessages[message.chatRoomId] || []), message],
-      }));
-    });
+    localStorage.setItem('chatMessages', JSON.stringify(messages));
+  }, [messages]);
 
-    socket.on("userJoined", ({ userId, userType, onlineUsers }) => {
-      setActiveChats(prev => prev.map(chat => ({
-        ...chat,
-        isOnline: onlineUsers.includes(chat.partnerId)
-      })));
-    });
+  // Save chats to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('chats', JSON.stringify(chats));
+  }, [chats]);
 
-    return () => {
-      socket.off("message");
-      socket.off("userJoined");
-    };
-  }, []);
-
-  const startChat = (userId, recipientId) => {
-    const chatRoomId = [userId, recipientId].sort().join("_");
-    setCurrentChatRoom(chatRoomId);
-    
-    // Add to active chats if not exists
-    if (!activeChats.find(chat => chat.partnerId === recipientId)) {
-      setActiveChats(prev => [...prev, {
-        roomId: chatRoomId,
-        partnerId: recipientId,
-        partnerName: `User ${recipientId}`,
-        isOnline: false
-      }]);
-    }
-    
-    socket.emit("joinRoom", { roomId: chatRoomId, userId });
-  };
-
-  const sendMessage = (userId, recipientId, content) => {
-    if (!currentChatRoom) return;
-
-    const messageData = {
-      sender: userId,
-      receiver: recipientId,
+  const sendMessage = (senderId, receiverId, content) => {
+    const newMessage = {
+      id: Date.now(),
+      senderId,
+      receiverId,
       content,
-      chatRoomId: currentChatRoom,
-      timestamp: new Date().toISOString(),
+      timestamp: new Date().toISOString()
     };
 
-    socket.emit("message", messageData);
-    setMessages((prevMessages) => ({
-      ...prevMessages,
-      [currentChatRoom]: [...(prevMessages[currentChatRoom] || []), messageData],
+    setMessages(prev => [...prev, newMessage]);
+
+    // Update chats if this is a new conversation
+    if (!chats[senderId]?.includes(receiverId)) {
+      setChats(prev => ({
+        ...prev,
+        [senderId]: [...(prev[senderId] || []), receiverId],
+        [receiverId]: [...(prev[receiverId] || []), senderId]
+      }));
+    }
+  };
+
+  const getMessages = (userId, partnerId) => {
+    return messages.filter(msg => 
+      (msg.senderId === userId && msg.receiverId === partnerId) ||
+      (msg.senderId === partnerId && msg.receiverId === userId)
+    ).sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+  };
+
+  const getUserChats = (userId) => {
+    const chatPartners = chats[userId] || [];
+    return chatPartners.map(partnerId => ({
+      ...MOCK_USERS[partnerId],
+      lastMessage: messages
+        .filter(msg => 
+          (msg.senderId === userId && msg.receiverId === partnerId) ||
+          (msg.senderId === partnerId && msg.receiverId === userId)
+        )
+        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))[0]
     }));
-
-    // Update last message in active chats
-    setActiveChats(prev => prev.map(chat => 
-      chat.partnerId === recipientId 
-        ? { ...chat, lastMessage: content }
-        : chat
-    ));
   };
 
-  const value = {
-    messages,
-    currentChatRoom,
-    activeChats,
-    startChat,
-    sendMessage
-  };
+  const getUser = (userId) => MOCK_USERS[userId];
 
   return (
-    <ChatContext.Provider value={value}>
+    <ChatContext.Provider value={{
+      sendMessage,
+      getMessages,
+      getUserChats,
+      getUser,
+      MOCK_USERS
+    }}>
       {children}
     </ChatContext.Provider>
   );
-};
+}
 
-export const useChat = () => {
+export function useChat() {
   return useContext(ChatContext);
-};
+}

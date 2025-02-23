@@ -10,6 +10,7 @@ const ScrollableCategories = ({ categories }) => {
   
   const [showProgress, setShowProgress] = useState(false);
   const navigate = useNavigate();
+  
 
   const progressOptions = [
     { label: "Just Started", value: "20%" },
@@ -101,7 +102,7 @@ const ProfileSection = ({ userData }) => {
       {/* Profile Header */}
       <div className="flex flex-col items-center mb-6">
         <img
-          src={userData.profilePicture || "https://via.placeholder.com/100"}
+          src={userData.profilePicture}
           alt="Profile"
           className="w-20 h-20 rounded-full mb-4"
         />
@@ -123,7 +124,7 @@ const ProfileSection = ({ userData }) => {
         <div className="flex justify-between items-center">
           <span className="text-[#567C8D]">Hourly Rate</span>
           <span className="font-bold text-[#2F4156]">
-            {userData.hourlyRate ? `$${userData.hourlyRate}/hr` : 'Not set'}
+            {userData.hourlyRate || 'Not set'}
           </span>
         </div>
         <div className="flex justify-between items-center">
@@ -193,11 +194,25 @@ const FreelancerDashboard = () => {
   const [currentPage, setCurrentPage] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortOption, setSortOption] = useState('');
+  const [showChatList, setShowChatList] = useState(false);
+  const [selectedChat, setSelectedChat] = useState(null);
+  const { getUserChats } = useChat();
+
   const navigate = useNavigate();
   const [userData, setUserData] = useState({
     displayName: '',
     photoURL: null,
-    email: ''
+    email: '',
+    bio: '',
+    portfolio: '',
+    resume: '',
+    github: '',
+    skills: [],
+    hourlyRate: '',
+    rating: 0,
+    reviews: 0,
+    paymentMethod: [],
+    availability: ''
   });
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [userId, setUserId] = useState(null);
@@ -206,11 +221,12 @@ const FreelancerDashboard = () => {
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
       if (user) {
-        setUserData({
+        setUserData((prevData) => ({
+          ...prevData,
           displayName: user.displayName || 'Update your name',
           photoURL: user.photoURL,
           email: user.email
-        });
+        }));
       } else {
         navigate('/freelancer/login');
       }
