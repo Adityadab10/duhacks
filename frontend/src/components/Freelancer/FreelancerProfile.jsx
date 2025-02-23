@@ -1,267 +1,288 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { 
   Mail, Phone, MapPin, Briefcase, 
   DollarSign, Globe, FileText, CheckCircle,
-  X, Camera, Edit2, Save, AlertCircle
+  X, Camera, Edit2, Save, AlertCircle, Github
 } from 'lucide-react';
-import { auth } from '../../firebaseConfig';
 import { useNavigate } from 'react-router-dom';
 
 const FreelancerProfile = ({ isNewUser = false }) => {
   const navigate = useNavigate();
-  const [isEditing, setIsEditing] = useState(isNewUser);
-  const [editingSections, setEditingSections] = useState({});
-  const [showConfirmation, setShowConfirmation] = useState(false);
-  
-  const [profile, setProfile] = useState({
-    basicInfo: {
-      fullName: '',
-      email: '',
-      phone: '',
-      location: '',
-      profilePicture: null
-    },
-    professionalInfo: {
-      title: 'Frontend Developer',
-      experience: '',
-      rate: '',
-      bio: '',
-      portfolio: '',
-      skills: ['React', 'JavaScript']
-    },
-    education: [],
-    workPreferences: {
-      availability: '',
-      workType: '',
-      categories: []
-    }
-  });
+  const [profile, setProfile] = useState(null);
+  const [firebaseUID, setFirebaseUID] = useState(null);
+  const [activeField, setActiveField] = useState(null);
+  const [editedValues, setEditedValues] = useState({});
+  const user = JSON.parse(localStorage.getItem("user"));
+  console.log(user.photoURL)
+  useEffect(() => {
+    const fetchFreelancerProfile = async () => {
+      try {
+        const user = JSON.parse(localStorage.getItem("user"));
+        if (!user) return;
+
+        const response = await axios.get(`http://localhost:4000/api/profile/${user.uid}`);
+        setProfile(response.data);
+        setFirebaseUID(user.uid);
+        setEditedValues(response.data);
+      } catch (error) {
+        console.error("Error fetching freelancer profile:", error);
+      }
+    };
+
+    fetchFreelancerProfile();
+  }, []);
 
   const calculateCompletion = () => {
-    let completed = 0;
-    let total = 0;
+    if (!profile) return 0;
     
-    Object.entries(profile).forEach(([section, data]) => {
-      if (typeof data === 'object') {
-        Object.values(data).forEach(value => {
-          if (Array.isArray(value)) {
-            completed += value.length > 0 ? 1 : 0;
-          } else {
-            completed += value && value !== '' ? 1 : 0;
-          }
-          total += 1;
-        });
-      }
-    });
+    const requiredFields = {
+      name: profile.name,
+      email: profile.email,
+      bio: profile.bio,
+      hourlyRate: profile.hourlyRate > 0,
+      github: profile.github,
+      portfolio: profile.portfolio,
+      skills: Array.isArray(profile.skills) && profile.skills.length > 0,
+      resume: profile.resume
+    };
 
-    return Math.round((completed / total) * 100);
+    const completedFields = Object.values(requiredFields).filter(Boolean).length;
+    return Math.round((completedFields / Object.keys(requiredFields).length) * 100);
   };
 
-  const EditableSection = ({ 
-    section, 
-    title, 
-    children, 
-    onEdit,
-    className = "" 
-  }) => {
-    const isEditable = editingSections[section];
-
-    return (
-      <div className={`bg-white rounded-lg shadow p-6 relative group ${className} mb-6`}>
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold text-gray-800">{title}</h2>
-          {isEditing && (
-            <button
-              onClick={() => onEdit(section)}
-              className={`text-gray-400 hover:text-blue-600 transition-colors ${
-                !isEditable && 'opacity-0 group-hover:opacity-100'
-              }`}
-            >
-              {isEditable ? <Save size={18} /> : <Edit2 size={18} />}
-            </button>
-          )}
-        </div>
-        <div className={isEditable ? 'opacity-100' : 'opacity-90'}>
-          {children}
-        </div>
-      </div>
-    );
+  const handleFieldEdit = (field) => {
+    setActiveField(field);
   };
 
-  const CustomAlert = ({ children }) => (
-    <div className="flex items-center gap-3 p-4 mb-6 border border-yellow-200 bg-yellow-50 rounded-lg text-yellow-800">
-      <AlertCircle className="h-4 w-4" />
-      <div className="text-sm">{children}</div>
+  const handleFieldSave = async (field) => {
+    try {
+      await axios.put(`http://localhost:4000/api/profile/${firebaseUID}`, editedValues);
+      setProfile(editedValues);
+      setActiveField(null);
+    } catch (error) {
+      console.error("Error updating profile:", error);
+    }
+  };
+
+  const handleChange = (field, value) => {
+    setEditedValues(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleSkillAdd = () => {
+    const skill = document.getElementById('skillInput').value.trim();
+    if (skill && (!editedValues.skills || !editedValues.skills.includes(skill))) {
+      setEditedValues(prev => ({
+        ...prev,
+        skills: [...(prev.skills || []), skill]
+      }));
+      document.getElementById('skillInput').value = '';
+    }
+  };
+
+  const handleSkillRemove = (skillToRemove) => {
+    setEditedValues(prev => ({
+      ...prev,
+      skills: prev.skills.filter(skill => skill !== skillToRemove)
+    }));
+  };
+
+  if (!profile) return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
     </div>
   );
 
-  const toggleEdit = () => {
-    if (isEditing) {
-      setShowConfirmation(true);
-    } else {
-      setIsEditing(true);
-    }
-  };
-
-  const handleSave = () => {
-    setIsEditing(false);
-    setEditingSections({});
-    setShowConfirmation(false);
-    // Here you would typically save to backend
-  };
-
-  const handleSectionEdit = (section) => {
-    if (editingSections[section]) {
-      setEditingSections(prev => ({ ...prev, [section]: false }));
-    } else {
-      setEditingSections(prev => ({ ...prev, [section]: true }));
-    }
-  };
+  const EditableField = ({ field, value, label, icon: Icon, type = "text", editable = true }) => (
+    <div className="mb-6 relative group">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center text-gray-700 mb-2">
+          {Icon && <Icon size={18} className="mr-2" />}
+          <span className="font-medium">{label}</span>
+        </div>
+        {editable && (
+          <button
+            onClick={() => activeField === field ? handleFieldSave(field) : handleFieldEdit(field)}
+            className="text-sm px-3 py-1 rounded-md transition-colors hover:bg-gray-100"
+          >
+            {activeField === field ? <Save size={16} /> : <Edit2 size={16} />}
+          </button>
+        )}
+      </div>
+      {activeField === field && editable ? (
+        <input
+          type={type}
+          value={editedValues[field] || ''}
+          onChange={(e) => handleChange(field, e.target.value)}
+          className="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          autoFocus
+        />
+      ) : (
+        <div className="px-4 py-2 bg-gray-50 rounded-md">{value || 'Not set'}</div>
+      )}
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 pt-24">
       <div className="max-w-4xl mx-auto px-4">
-        {/* Edit Controls */}
-        <div className="flex justify-between items-center mb-6 ">
-          <h1 className="text-2xl font-bold text-gray-800">
-            {isNewUser ? 'Complete Your Profile' : 'Professional Profile'}
-          </h1>
-          {!isNewUser && (
-            <button
-              onClick={toggleEdit}
-              className={`px-4 py-2 rounded-md transition-colors ${
-                isEditing 
-                  ? 'bg-green-600 text-white hover:bg-green-700'
-                  : 'bg-blue-600 text-white hover:bg-blue-700'
-              }`}
-            >
-              {isEditing ? 'Save Changes' : 'Edit Profile'}
-            </button>
-          )}
+        {/* Profile Header */}
+        <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+          <div className="flex items-center space-x-6">
+            <div className="relative group">
+              <div className="w-24 h-24 rounded-full overflow-hidden">
+                <img
+                  src={profile.profilePicture || (user && user.photoURL) || "https://via.placeholder.com/100"}
+                  alt={profile.name || "Profile"}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                <Camera className="text-white" size={24} />
+              </div>
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-800">{profile.name}</h1>
+              <p className="text-gray-600">{profile.email}</p>
+              <div className="mt-2">
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                  <CheckCircle size={14} className="mr-1" /> Available for work
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Completion Alert */}
         {calculateCompletion() < 100 && (
-          <CustomAlert>
-            Your profile is {calculateCompletion()}% complete. Add missing information to increase your chances of getting hired!
-          </CustomAlert>
+          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6 rounded-md">
+            <div className="flex items-center">
+              <AlertCircle className="text-yellow-400 mr-3" size={20} />
+              <p className="text-sm text-yellow-700">
+                Your profile is {calculateCompletion()}% complete. Complete your profile to increase visibility.
+              </p>
+            </div>
+          </div>
         )}
 
-        {/* Profile Content */}
-        <div className="flex items-center mb-6">
-          <img
-            src={profile.basicInfo.profilePicture || "https://via.placeholder.com/100"}
-            alt="Profile"
-            className="w-20 h-20 rounded-full mr-4"
-          />
-          <div>
-            <h2 className="text-2xl font-bold text-gray-800">{profile.basicInfo.fullName}</h2>
-            <p className="text-gray-600">{profile.basicInfo.email}</p>
-          </div>
-        </div>
+        {/* Main Profile Content */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Left Column */}
+          <div className="space-y-6">
+            <div className="bg-white rounded-xl shadow-sm p-6">
+              <h2 className="text-lg font-semibold mb-4">Basic Information</h2>
+              <EditableField
+                field="email"
+                value={profile.email}
+                label="Email"
+                icon={Mail}
+                type="email"
+                editable={false}
+              />
+              <EditableField
+                field="portfolio"
+                value={profile.portfolio}
+                label="Portfolio URL"
+                icon={Globe}
+              />
+              <EditableField
+                field="github"
+                value={profile.github}
+                label="GitHub Profile"
+                icon={Github}
+              />
+            </div>
 
-        <EditableSection
-          section="basicInfo"
-          title="Basic Information"
-          onEdit={handleSectionEdit}
-        >
-          <div className="space-y-4">
-            <div className="flex items-center text-gray-600">
-              <Mail size={18} className="mr-3" />
-              <span>{profile.basicInfo.email}</span>
-            </div>
-            <div className="flex items-center text-gray-600">
-              <Phone size={18} className="mr-3" />
-              <span>{profile.basicInfo.phone || 'Add phone number'}</span>
-            </div>
-            <div className="flex items-center text-gray-600">
-              <MapPin size={18} className="mr-3" />
-              <span>{profile.basicInfo.location || 'Add location'}</span>
-            </div>
-          </div>
-        </EditableSection>
-
-        <EditableSection
-          section="professionalInfo"
-          title="Professional Information"
-          onEdit={handleSectionEdit}
-        >
-          <div className="space-y-4">
-            <div className="flex items-center text-gray-600">
-              <Briefcase size={18} className="mr-3" />
-              <span>{profile.professionalInfo.title}</span>
-            </div>
-            <div className="flex items-center text-gray-600">
-              <DollarSign size={18} className="mr-3" />
-              <span>${profile.professionalInfo.rate || '0'}/hr</span>
-            </div>
-            <div className="flex items-center text-gray-600">
-              <Globe size={18} className="mr-3" />
-              <span>{profile.professionalInfo.portfolio || 'Add portfolio URL'}</span>
-            </div>
-            <div className="flex items-center text-gray-600">
-              <FileText size={18} className="mr-3" />
-              <span>Upload Resume</span>
+            <div className="bg-white rounded-xl shadow-sm p-6">
+              <h2 className="text-lg font-semibold mb-4">Professional Details</h2>
+              <EditableField
+                field="hourlyRate"
+                value={`$${profile.hourlyRate}/hr`}
+                label="Hourly Rate"
+                icon={DollarSign}
+                type="number"
+              />
+              <EditableField
+                field="availability"
+                value={profile.availability}
+                label="Availability"
+                icon={Briefcase}
+              />
             </div>
           </div>
-        </EditableSection>
 
-        <EditableSection
-          section="skills"
-          title="Skills"
-          onEdit={handleSectionEdit}
-        >
-          <div className="flex flex-wrap gap-2">
-            {profile.professionalInfo.skills.map((skill, index) => (
-              <span key={index} className="bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-sm">
-                {skill}
-              </span>
-            ))}
-          </div>
-        </EditableSection>
+          {/* Right Column */}
+          <div className="space-y-6">
+            <div className="bg-white rounded-xl shadow-sm p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold">Skills</h2>
+                {activeField === 'skills' ? (
+                  <button
+                    onClick={() => handleFieldSave('skills')}
+                    className="text-sm px-3 py-1 rounded-md bg-blue-500 text-white hover:bg-blue-600"
+                  >
+                    Save Skills
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => handleFieldEdit('skills')}
+                    className="text-sm px-3 py-1 rounded-md hover:bg-gray-100"
+                  >
+                    <Edit2 size={16} />
+                  </button>
+                )}
+              </div>
+              
+              {activeField === 'skills' && (
+                <div className="mb-4">
+                  <div className="flex gap-2">
+                    <input
+                      id="skillInput"
+                      type="text"
+                      placeholder="Add a skill"
+                      className="flex-1 px-4 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                    <button
+                      onClick={handleSkillAdd}
+                      className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                    >
+                      Add
+                    </button>
+                  </div>
+                </div>
+              )}
 
-        <EditableSection
-          section="workPreferences"
-          title="Work Preferences"
-          onEdit={handleSectionEdit}
-        >
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex items-center text-gray-600">
-              <DollarSign size={18} className="mr-3" />
-              <span>${profile.professionalInfo.rate || '0'}/hr</span>
-            </div>
-            <div className="flex items-center text-gray-600">
-              <Briefcase size={18} className="mr-3" />
-              <span>{profile.workPreferences.workType || 'Add work type'}</span>
-            </div>
-          </div>
-        </EditableSection>
-
-        {/* Confirmation Dialog */}
-        {showConfirmation && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 max-w-md mx-4">
-              <h3 className="text-lg font-semibold mb-4">Save Changes?</h3>
-              <p className="text-gray-600 mb-6">
-                Are you sure you want to save your profile changes? This will update your public profile.
-              </p>
-              <div className="flex justify-end gap-4">
-                <button
-                  onClick={() => setShowConfirmation(false)}
-                  className="px-4 py-2 text-gray-600 hover:text-gray-800"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSave}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                >
-                  Save Changes
-                </button>
+              <div className="flex flex-wrap gap-2">
+                {editedValues.skills?.map((skill, index) => (
+                  <span
+                    key={index}
+                    className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-50 text-blue-700"
+                  >
+                    {skill}
+                    {activeField === 'skills' && (
+                      <button
+                        onClick={() => handleSkillRemove(skill)}
+                        className="ml-2 hover:text-blue-900"
+                      >
+                        <X size={14} />
+                      </button>
+                    )}
+                  </span>
+                ))}
               </div>
             </div>
+
+            <div className="bg-white rounded-xl shadow-sm p-6">
+              <h2 className="text-lg font-semibold mb-4">Resume</h2>
+              <EditableField
+                field="resume"
+                value={profile.resume}
+                label="Resume"
+                icon={FileText}
+              />
+            </div>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

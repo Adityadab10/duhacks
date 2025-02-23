@@ -29,18 +29,12 @@ const CompanyDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Hero Section */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white py-12">
-        <div className="container mx-auto px-4">
-          <h1 className="text-4xl font-bold mb-4">Company Dashboard</h1>
-          <p className="text-xl">Manage your jobs and connect with talent</p>
-        </div>
-      </div>
+      {/* Header */}
+      
 
-      {/* Main Content */}
-      <div className="container mx-auto px-4 py-6 -mt-8">
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="container pt-24 mx-auto px-4 py-8">
+        {/* Stats Section */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           {stats.map((stat, index) => (
             <div key={index} className="bg-white p-6 rounded-lg shadow-sm border">
               <div className="flex items-center justify-between">

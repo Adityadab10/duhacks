@@ -79,7 +79,7 @@ app.post("/api/messages", async (req, res) => {
 });
 
 io.on("connection", (socket) => {
-  console.log("User connected:", socket.id);
+  console.log("A user connected:", socket.id);
 
   socket.on("joinRoom", async ({ roomId, userId, userType }) => {
     try {
