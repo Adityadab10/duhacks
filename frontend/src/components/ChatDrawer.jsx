@@ -1,12 +1,18 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import ChatApp from './ChatApp';
 import { useChat } from '../context/ChatContext';
 import { X } from 'lucide-react';
 
 const ChatDrawer = ({ userId, isOpen, onClose }) => {
-  const { currentChat } = useChat();
+  const { currentChatRoom, messages, fetchMessages } = useChat();
 
-  if (!isOpen || !currentChat) return null;
+  useEffect(() => {
+    if (currentChatRoom && isOpen) {
+      fetchMessages(currentChatRoom);
+    }
+  }, [currentChatRoom, isOpen, fetchMessages]);
+
+  if (!isOpen || !currentChatRoom) return null;
 
   return (
     <div className="fixed right-0 top-0 h-full w-[400px] bg-white shadow-2xl transform transition-transform duration-300 ease-in-out z-50">
@@ -24,7 +30,8 @@ const ChatDrawer = ({ userId, isOpen, onClose }) => {
         <div className="flex-1 overflow-hidden">
           <ChatApp
             userId={userId}
-            chatRoom={currentChat.roomId}
+            chatRoom={currentChatRoom}
+            messages={messages[currentChatRoom] || []}
           />
         </div>
       </div>

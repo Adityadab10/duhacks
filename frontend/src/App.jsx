@@ -1,6 +1,5 @@
 import React from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
-import { ChatProvider } from './context/ChatContext';
 import Navbar from './components/Navbar'
 import HeroSection from './components/HeroSection'
 import CompanyLogin from "./components/company/CompanyLogin";
@@ -16,6 +15,7 @@ import CompanyDashboard from "./components/company/CompanyDashboard";
 import JobBoard from "./components/company/JobBoard";
 import AboutUs from "./components/ui/AboutUs";
 import CompanyHero from "./components/company/CompanyHero";
+import ChatApp from './components/ChatApp';
 
 function App() {
   const urlParams = new URLSearchParams(window.location.search);
@@ -23,10 +23,11 @@ function App() {
   const chatRoom = "room1";
   
   return (
-    <ChatProvider>
       <Router>
       <div className="min-h-screen flex flex-col">
           <Navbar />
+          <ChatApp/>
+          
         <main className="flex-grow">
           <Routes>
             <Route path="/" element={
@@ -53,7 +54,6 @@ function App() {
         </main>
       </div>
     </Router>
-    </ChatProvider>
   )
 }
 

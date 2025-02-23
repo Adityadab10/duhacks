@@ -2,6 +2,9 @@ import React, { useState, useRef, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, MessageCircle, Share2, ArrowRight, Star, Search } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { auth } from '../../firebaseConfig';
+import ChatDrawer from '../ChatDrawer';
+import ChatList from '../ChatList';
+import { useChat } from '../../context/ChatContext';
 
 const ScrollableCategories = ({ categories }) => {
   const scrollRef = useRef(null);
@@ -94,6 +97,9 @@ const FreelancerDashboard = () => {
     photoURL: null,
     email: ''
   });
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [userId, setUserId] = useState(null);
+  const { startChat } = useChat();
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
@@ -187,6 +193,11 @@ console.log(firebaseUID,email,name,photoURL)
 
   const handleSortChange = (e) => {
     setSortOption(e.target.value);
+  };
+
+  const handleStartChat = (companyId) => {
+    startChat(userId, companyId);
+    setIsChatOpen(true);
   };
 
   return (
@@ -337,6 +348,14 @@ console.log(firebaseUID,email,name,photoURL)
           </div>
         </div>
       </div>
+
+      {/* Chat Drawer */}
+      <ChatDrawer
+        isOpen={isChatOpen}
+        onClose={() => setIsChatOpen(false)}
+        userId={userId}
+      />
+      <ChatList onChatSelect={handleStartChat} />
     </div>
   );
 };
