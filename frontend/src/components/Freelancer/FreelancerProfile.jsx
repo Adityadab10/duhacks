@@ -191,6 +191,13 @@ const FreelancerProfile = ({ isNewUser = false }) => {
                 label="GitHub Profile"
                 icon={Github}
               />
+              <EditableField
+                field="bio"
+                value={profile.bio}
+                label="Bio"
+                icon={FileText}
+                type="textarea"
+              />
             </div>
 
             <div className="bg-white rounded-xl shadow-sm p-6">
