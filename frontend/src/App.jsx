@@ -16,6 +16,8 @@ import JobBoard from "./components/company/JobBoard";
 import AboutUs from "./components/ui/AboutUs";
 import CompanyHero from "./components/company/CompanyHero";
 import { ChatProvider } from "./context/ChatContext"; 
+import Footer from './components/Footer';
+import HowItWorks from './components/HowItWorks';
 
 function App() {
   const urlParams = new URLSearchParams(window.location.search);
@@ -38,6 +40,7 @@ function App() {
                 <div className="app-container">
                   {/* <ChatApp userId={userId} chatRoom={chatRoom} /> */}
                 </div>
+                <Footer />
               </>
             } />
             <Route path="/freelancer/login" element={<FreelancerLogin />} />
@@ -51,6 +54,8 @@ function App() {
             <Route path="/create-job" element={<CreateJobOpening />} />
             <Route path="/about" element={<AboutUs />} />
             <Route path="/company/hero" element={<CompanyHero />} />
+            <Route path="/how-it-works" element={<HowItWorks />} />
+            <Route path="/section" element={<Section />} />
           </Routes>
         </main>
       </div>

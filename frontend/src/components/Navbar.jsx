@@ -10,7 +10,7 @@ export default function Navbar() {
   const navItems = [
     { path: "/", label: "Home" },
     { path: "/about", label: "About" },
-    { path: "/services", label: "Services" },
+    { path: "/section", label: "Services" }, // Changed path to /section
     { path: "/contact", label: "Contact" }
   ];
 
@@ -67,7 +67,7 @@ export default function Navbar() {
             ))}
             <li className="ml-4">
               <Link
-                to="/get-started"
+                to="/section"  // Changed from /get-started to /section
                 className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-blue-400 text-white rounded-full text-sm font-medium hover:from-blue-500 hover:to-blue-300 transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
               >
                 Get Started
@@ -101,7 +101,7 @@ export default function Navbar() {
             ))}
             <li className="pt-2">
               <Link
-                to="/get-started"
+                to="/section"  // Changed from /get-started to /section
                 className="block px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-400 text-white rounded-lg text-sm font-medium text-center hover:from-blue-500 hover:to-blue-300 transition-all duration-300 shadow-md"
                 onClick={() => setIsOpen(false)}
               >

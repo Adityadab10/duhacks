@@ -44,17 +44,9 @@ const CompanyDashboard = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-white border-b">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-blue-600">Company Dashboard</h1>
-          <div className="flex items-center gap-4">
-            <Button variant="outline">Home</Button>
-            <Button>Post a Job</Button>
-          </div>
-        </div>
-      </div>
+      
 
-      <div className="container mx-auto px-4 py-8">
+      <div className="container pt-24 mx-auto px-4 py-8">
         {/* Stats Section */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           {stats.map((stat, index) => (

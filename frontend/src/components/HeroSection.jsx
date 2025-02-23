@@ -1,7 +1,10 @@
-  import React from 'react'
+import React from 'react'
+import { useNavigate } from 'react-router-dom' // Add this import
 import { ArrowRight, Users, Shield, Star, Briefcase, Globe } from "lucide-react"
 
 export default function HeroSection() {
+  const navigate = useNavigate(); // Add this hook
+
   return (
     <div className="bg-gradient-to-br from-[#2F4156] to-[#1A2A3A] text-white">
       <div className="container mx-auto px-4 py-16 md:py-24">
@@ -15,11 +18,17 @@ export default function HeroSection() {
               successful freelancers on our secure and innovative platform.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
-              <button className="bg-white text-[#2F4156] px-6 py-3 rounded-md hover:bg-gray-100 transition-colors flex items-center justify-center">
+              <button 
+                onClick={() => navigate('/section')}  // Add onClick handler
+                className="bg-white text-[#2F4156] px-6 py-3 rounded-md hover:bg-gray-100 transition-colors flex items-center justify-center"
+              >
                 Get Started
                 <ArrowRight className="ml-2 h-5 w-5" />
               </button>
-              <button className="border border-white text-white px-6 py-3 rounded-md hover:bg-white/10 transition-colors">
+              <button 
+                onClick={() => navigate('/how-it-works')} // Add this onClick handler
+                className="border border-white text-white px-6 py-3 rounded-md hover:bg-white/10 transition-colors"
+              >
                 How It Works
               </button>
             </div>
