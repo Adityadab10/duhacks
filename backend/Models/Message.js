@@ -1,40 +1,22 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
-const MessageSchema = new mongoose.Schema({
-  room: {
-    type: String,
-    required: true,
-    index: true // Add index for faster queries
+const MessageSchema = new mongoose.Schema(
+  {
+    room: { type: String, required: true }, // Ensure this stores `roomId` (String)
+    sender: { type: String, required: true },
+    content: { type: String, required: true },
+    messageType: { type: String, enum: ["text", "image", "file"], default: "text" },
+    timestamp: { type: Date, default: Date.now },
+    readBy: [
+      {
+        userId: { type: String },
+        readAt: { type: Date, default: Date.now },
+      },
+    ],
   },
-  sender: {
-    type: String,
-    required: true
-  },
-  content: {
-    type: String,
-    required: true
-  },
-  timestamp: {
-    type: Date,
-    default: Date.now
-  },
-  messageType: {
-    type: String,
-    enum: ['text', 'file', 'image'],
-    default: 'text'
-  },
-  readBy: [{
-    userId: String,
-    readAt: Date
-  }],
-  metadata: {
-    fileName: String,
-    fileSize: Number,
-    mimeType: String
-  }
-});
+  { timestamps: true }
+);
 
-// Add compound index for efficient querying of messages by room and timestamp
-MessageSchema.index({ room: 1, timestamp: -1 });
+const Message = mongoose.model("Message", MessageSchema);
 
-module.exports = mongoose.model('Message', MessageSchema);
+module.exports = Message;
