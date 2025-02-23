@@ -21,9 +21,9 @@ const Card = ({
         shadow-lg 
         rounded-lg 
         ${border ? 'border border-gray-200' : ''} 
-        ${hover ? 'transition-shadow duration-200 hover:shadow-xl' : ''}
+        ${hover ? 'transition-shadow duration-200 hover:shadow-xl' : ''} 
         ${noPadding ? '' : 'p-6'} 
-        ${onClick ? 'cursor-pointer' : ''}
+        ${onClick ? 'cursor-pointer' : ''} 
         ${className}
       `}
       onClick={onClick}

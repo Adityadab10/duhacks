@@ -66,32 +66,58 @@ const CreateJob = () => {
     setIsSubmitting(true);
 
     try {
+      // Get user data from localStorage
+      const userData = localStorage.getItem("userData");
+      if (!userData) {
+        throw new Error('Please login again');
+      }
+
+      const parsedUserData = JSON.parse(userData);
+      // Try both possible ID fields
+      const companyId = parsedUserData._id || parsedUserData.id;
+
+      if (!companyId) {
+        throw new Error('Company ID not found. Please login again.');
+      }
+
       const formattedData = {
-        ...jobData,
         jobTitle: jobData.jobTitle.trim(),
+        pay: jobData.pay ? Number(jobData.pay) : undefined,
+        time: new Date(jobData.time).toISOString(),
         skills: jobData.skills ? jobData.skills.split(',').map(skill => skill.trim()).filter(Boolean) : [],
-        pay: jobData.pay ? Number(jobData.pay) : null
+        description: jobData.description.trim(),
+        companyId: companyId,
+        status: "available"
       };
 
-      await fetch('http://localhost:4000/api/jobs', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formattedData),
-      });
+      console.log('Sending job data:', formattedData); // Debug log
 
-      setSuccess(true);
-      setJobData({
-        jobTitle: '',
-        pay: '',
-        time: '',
-        skills: '',
-        description: '',
-        companyId: ''
-      });
+      const response = await axios.post('http://localhost:4000/api/jobs', formattedData);
+
+      if (response.data) {
+        setSuccess(true);
+        setJobData({
+          jobTitle: '',
+          pay: '',
+          time: '',
+          skills: '',
+          description: '',
+          companyId: companyId // Keep the company ID
+        });
+        
+        // Navigate after short delay
+        setTimeout(() => {
+          navigate('/company/dashboard');
+        }, 1500);
+      }
     } catch (err) {
-      setError(err.message || 'Failed to create job. Please try again.');
+      console.error('Error creating job:', err.response?.data || err.message);
+      setError(
+        err.response?.data?.message || 
+        err.response?.data?.error || 
+        err.message || 
+        'Failed to create job. Please try again.'
+      );
     } finally {
       setIsSubmitting(false);
     }

@@ -6,7 +6,7 @@ import ChatDrawer from '../ChatDrawer';
 import ChatList from '../ChatList';
 import { useChat } from '../../context/ChatContext';
 import ChatComponent from '../components/ChatComponent';
-
+import axios from 'axios';
 
 const ScrollableCategories = ({ categories }) => {
   const scrollRef = useRef(null);
@@ -92,27 +92,29 @@ const FreelancerDashboard = () => {
   const [activeCategory, setActiveCategory] = useState('Web Design');
   const [currentPage, setCurrentPage] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortOption, setSortOption] = useState('');
+  const [sortOption, setSortOption] = useState('newest');
   const [showChatList, setShowChatList] = useState(false);
   const [selectedChat, setSelectedChat] = useState(null);
+  const [jobs, setJobs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const navigate = useNavigate();
   const [userData, setUserData] = useState({
     displayName: '',
-    photoURL: null,
-    email: ''
+    email: '',
+    photoURL: '',
+    uid: '',
   });
-  const [isChatOpen, setIsChatOpen] = useState(false);
-  const [userId, setUserId] = useState(null);
-  const { startChat } = useChat();
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
       if (user) {
         setUserData({
           displayName: user.displayName || 'Update your name',
+          email: user.email,
           photoURL: user.photoURL,
-          email: user.email
+          uid: user.uid,
         });
       } else {
         navigate('/freelancer/login');
@@ -122,295 +124,146 @@ const FreelancerDashboard = () => {
     return () => unsubscribe();
   }, [navigate]);
 
-  // Retrieve the stored JSON string from localStorage
-const userDataString = localStorage.getItem("user"); // Replace with your actual key
+  useEffect(() => {
+    const fetchJobs = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await axios.get('http://localhost:4000/api/jobs');
+        if (response.data) {
+          console.log('Jobs fetched:', response.data);
+          setJobs(response.data);
+        } else {
+          setError('No jobs found');
+        }
+      } catch (err) {
+        console.error('Error fetching jobs:', err);
+        setError(err.response?.data?.message || 'Failed to load jobs');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-// Parse the JSON string into an object
-if (userDataString) {
-  const userData = JSON.parse(userDataString);
-  const firebaseUID = userData.Uid
-const email = userData.email 
-const name = userData.displayName
-const photoURL = userData.photoURL
-console.log(firebaseUID,email,name,photoURL)
-  // Access specific properties like email
-  // console.log("User Email:", userData);
-} else {
-  console.log("No user data found in localStorage");
-}
+    fetchJobs();
 
+    // Set up polling interval (every 5 seconds)
+    const pollInterval = setInterval(fetchJobs, 5000);
 
-  const categories = [
-    { name: 'Web Design', price: '450$', count: '15' },
-    { name: 'App Design', price: '300$', count: '8' },
-    
-  ];
+    // Cleanup function to clear interval when component unmounts
+    return () => clearInterval(pollInterval);
+  }, []);
 
-  const projects = [
-    {
-      title: 'Web Design Project',
-      description: 'I need a web design for my company. I need the design in Figma files followed by a prototype.',
-      tags: ['UI Design', 'Web Design', 'prototyping'],
-      budget: '450$',
-      deadline: '2025-03-01'
-    },
-    {
-      title: 'E-commerce Website',
-      description: 'Looking for an experienced web designer to create a modern e-commerce platform with responsive design.',
-      tags: ['E-commerce', 'Web Design', 'Responsive'],
-      budget: '600$',
-      deadline: '2025-02-28'
-    },
-    {
-      title: 'Web Design Project',
-      description: 'I need a web design for my company. I need the design in Figma files followed by a prototype.',
-      tags: ['UI Design', 'Web Design', 'prototyping'],
-      budget: '450$',
-      deadline: '2025-03-05'
-    },
-  
-  ];
-
-  const projectsPerPage = 3;
-  const totalPages = Math.ceil(projects.length / projectsPerPage);
-  
-  const getCurrentPageProjects = () => {
-    const start = currentPage * projectsPerPage;
-    const end = start + projectsPerPage;
-    return projects.slice(start, end);
-  };
-
-  const handleNextPage = () => {
-    if (currentPage < totalPages - 1) {
-      setCurrentPage(currentPage + 1);
-    }
-  };
-
-  const handlePrevPage = () => {
-    if (currentPage > 0) {
-      setCurrentPage(currentPage - 1);
-    }
-  };
-
-  const handleSearch = (e) => {
-    setSearchTerm(e.target.value);
-  };
-
-  const handleSortChange = (e) => {
-    setSortOption(e.target.value);
-  };
-
-  const handleStartChat = (companyId) => {
-    startChat(userId, companyId);
-    setIsChatOpen(true);
-  };
+  const filteredAndSortedJobs = jobs
+    .filter(job => {
+      if (!searchTerm) return true;
+      
+      const searchLower = searchTerm.toLowerCase();
+      return (
+        job.title?.toLowerCase().includes(searchLower) ||
+        job.company?.toLowerCase().includes(searchLower) ||
+        job.description?.toLowerCase().includes(searchLower) ||
+        job.skills?.some(skill => skill.toLowerCase().includes(searchLower))
+      );
+    })
+    .sort((a, b) => {
+      switch (sortOption) {
+        case "newest":
+          return new Date(b.createdAt) - new Date(a.createdAt);
+        case "oldest":
+          return new Date(a.createdAt) - new Date(b.createdAt);
+        default:
+          return 0;
+      }
+    });
 
   return (
-    <div className="min-h-screen bg-[#F5EEEB] pt-11">
-      {/* Main Content */}
-      <div className="container mx-auto px-6 py-8">
-        <div className="grid grid-cols-4 gap-8">
-          {/* Profile Section */}
-          <div className="col-span-1">
-            <div className="bg-white rounded-lg p-6 shadow-lg">
-              <div className="flex flex-col items-center mb-6">
-                <img
-                  src={userData.photoURL || "https://via.placeholder.com/100"}
-                  alt="Profile"
-                  className="w-20 h-20 rounded-full mb-4"
-                />
-                <h2 className="text-xl font-bold text-[#2F4156]">{userData.displayName}</h2>
-                <p className="text-[#567C8D]">{userData.email}</p>
-              </div>
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-[#567C8D]">Avg Earnings</span>
-                  <span className="font-bold text-[#2F4156]">500$</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-[#567C8D]">Projects Completed</span>
-                  <span className="font-bold text-[#2F4156]">24</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-[#567C8D]">Rating</span>
-                  <div className="flex text-yellow-400">
-                    {[...Array(4)].map((_, i) => (
-                      <Star key={i} className="h-4 w-4 fill-current" />
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Statistics Section */}
-              <div className="bg-white rounded-lg p-6 shadow-lg mt-8">
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-[#567C8D]">Total Applications</span>
-                    <span className="font-bold text-[#2F4156]">50</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-[#567C8D]">Hired Jobs</span>
-                    <span className="font-bold text-[#2F4156]">20</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-[#567C8D]">Completion Rate</span>
-                    <span className="font-bold text-[#2F4156]">80%</span>
-                  </div>
-                  <button className="bg-[#2F4156] text-white px-4 py-2 rounded-md hover:bg-[#567C8D] transition-colors w-full">
-                    Track All Applications
-                  </button>
-                </div>
-              </div>
+    <div className="min-h-screen bg-[#F5EEEB]">
+      <div className="container mx-auto px-4 py-8">
+        {/* Search and Filter Section */}
+        <div className="mb-8">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search jobs by title, company, or skills"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
             </div>
-          </div>
-
-          {/* Main Content Area */}
-          <div className="col-span-3 space-y-8">
-            {/* Working On Section */}
-            <div>
-              <h2 className="text-xl font-bold text-[#2F4156] mb-4">Working On</h2>
-              <ScrollableCategories categories={categories} />
-            </div>
-
-            {/* Search and Sort Section */}
-            <div className="flex justify-between items-center mb-4">
-              <div className="text-xl font-semibold">Browse Jobs</div>
-              <div className="flex items-center space-x-4">
-                <div className="relative">
-                  <input
-                    type="text"
-                    placeholder="Search by company or title"
-                    value={searchTerm}
-                    onChange={handleSearch}
-                    className="pl-10 pr-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#2F4156]"
-                  />
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                </div>
-                <select
-                  value={sortOption}
-                  onChange={handleSortChange}
-                  className="py-2 px-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#2F4156]"
-                >
-                  <option value="">Sort By</option>
-                  <option value="deadline">Deadline</option>
-                  <option value="price">Price</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Browse Projects */}
-            <div>
-              <div className="space-y-4">
-                {getCurrentPageProjects().map((project, index) => (
-                  <div key={index} className="bg-white rounded-lg p-6 shadow-lg">
-                    <div className="flex justify-between items-start mb-4">
-                      <h3 className="text-lg font-medium text-[#2F4156]">{project.title}</h3>
-                      <span className="text-[#567C8D] font-bold">{project.budget}</span>
-                    </div>
-                    <p className="text-[#567C8D] mb-4">{project.description}</p>
-                    <div className="flex items-center justify-between">
-                      <div className="flex gap-2">
-                        {project.tags.map((tag, i) => (
-                          <span key={i} className="bg-[#C8D9E6] text-[#2F4156] px-3 py-1 rounded-full text-sm">
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                      <button className="text-[#2F4156] hover:text-[#567C8D] flex items-center">
-                        Details <ArrowRight className="ml-2 h-4 w-4" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              
-              {/* Pagination Controls */}
-              <div className="flex justify-between mt-6">
-                <button
-                  onClick={handlePrevPage}
-                  disabled={currentPage === 0}
-                  className={`flex items-center px-4 py-2 rounded-md ${
-                    currentPage === 0
-                      ? 'text-gray-400 cursor-not-allowed'
-                      : 'text-[#2F4156] hover:bg-[#C8D9E6]'
-                  }`}
-                >
-                  <ChevronLeft className="h-5 w-5 mr-2" /> Previous
-                </button>
-                <button
-                  onClick={handleNextPage}
-                  disabled={currentPage === totalPages - 1}
-                  className={`flex items-center px-4 py-2 rounded-md ${
-                    currentPage === totalPages - 1
-                      ? 'text-gray-400 cursor-not-allowed'
-                      : 'text-[#2F4156] hover:bg-[#C8D9E6]'
-                  }`}
-                >
-                  Next <ChevronRight className="h-5 w-5 ml-2" />
-                </button>
-              </div>
-            </div>
+            <select
+              value={sortOption}
+              onChange={(e) => setSortOption(e.target.value)}
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="newest">Newest First</option>
+              <option value="oldest">Oldest First</option>
+            </select>
           </div>
         </div>
-      </div>
 
-      {/* Chat Components */}
-      <div style={{ position: 'fixed', bottom: '20px', left: '20px', zIndex: 9999 }}>
-      
-
-        <button
-          onClick={() => setShowChatList(!showChatList)}
-          style={{
-            width: '60px',
-            height: '60px',
-            backgroundColor: '#2563eb',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            border: 'none',
-            cursor: 'pointer',
-            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-          }}
-        >
-          <MessageCircle color="white" size={24} />
-        </button>
-
-        {showChatList && !selectedChat && (
-          <div className="absolute bottom-16 left-0 w-72 bg-white rounded-lg shadow-xl" style={{ zIndex: 9999 }}>
-            <div className="p-4 border-b">
-              <h3 className="font-semibold">Messages</h3>
+        {/* Jobs Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {loading ? (
+            <div className="col-span-full text-center py-8">Loading jobs...</div>
+          ) : error ? (
+            <div className="col-span-full text-center text-red-500 py-8">{error}</div>
+          ) : filteredAndSortedJobs.length === 0 ? (
+            <div className="col-span-full text-center text-gray-500 py-8">
+              No jobs found matching your search criteria
             </div>
-            <div className="p-2">
-              {activeChats.map((chat) => (
-                <button
-                  key={chat.id}
-                  onClick={() => handleStartChat(chat.id)}
-                  className="w-full flex items-center p-3 hover:bg-gray-50 rounded-lg"
-                >
-                  <div className="flex items-center space-x-3">
-                    <div className="w-2 h-2 bg-green-500 rounded-full" />
-                    <div>
-                      <span className="font-medium">{chat.name}</span>
-                    </div>
+          ) : (
+            filteredAndSortedJobs.map((job) => (
+              <div key={job._id} className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <h3 className="text-xl font-semibold text-gray-900">{job.title}</h3>
+                    <p className="text-gray-600 mt-1">{job.company}</p>
                   </div>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
+                  <span className="px-3 py-1 text-sm font-medium rounded-full bg-green-100 text-green-800">
+                    {job.type}
+                  </span>
+                </div>
 
-        {selectedChat && (
-          <div className="fixed right-0 top-0 h-full w-80 bg-white shadow-lg p-4 overflow-y-auto">
-            <div className="flex justify-between items-center border-b pb-2 mb-4">
-              <h3 className="font-semibold">Chat with {selectedChat.name}</h3>
-              <button onClick={handleCloseChat} className="text-gray-500 hover:text-gray-700">
-                <X size={20} />
-              </button>
-            </div>
-            <ChatApp userId={userData.email} partnerId={selectedChat.id} />
-          </div>
-        )}
+                <div className="space-y-2 mb-4">
+                  {job.salary && (
+                    <p className="text-gray-600 text-sm">
+                      <span className="font-medium">Salary:</span> ${job.salary}
+                    </p>
+                  )}
+                  {job.location && (
+                    <p className="text-gray-600 text-sm">
+                      <span className="font-medium">Location:</span> {job.location}
+                    </p>
+                  )}
+                </div>
+
+                <p className="text-gray-700 mb-4 line-clamp-3">{job.description}</p>
+
+                {job.skills && job.skills.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {job.skills.map((skill, index) => (
+                      <span
+                        key={index}
+                        className="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800"
+                      >
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                <button
+                  onClick={() => {/* Handle apply */}}
+                  className="w-full px-4 py-2 bg-[#2F4156] text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Apply Now
+                </button>
+              </div>
+            ))
+          )}
+        </div>
       </div>
     </div>
   );

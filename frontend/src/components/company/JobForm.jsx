@@ -51,6 +51,10 @@ const CreateJob = () => {
     if (jobData.pay && isNaN(jobData.pay)) {
       errors.pay = 'Pay must be a valid number';
     }
+
+    if (!jobData.companyId) {
+      errors.companyId = 'Company ID is required';
+    }
     
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
@@ -229,6 +233,9 @@ const CreateJob = () => {
             readOnly
             className="w-full p-2 border rounded-md bg-gray-100 cursor-not-allowed"
           />
+          {validationErrors.companyId && (
+            <p className="mt-1 text-sm text-red-500">{validationErrors.companyId}</p>
+          )}
         </div>
 
         <button

@@ -11,14 +11,12 @@ const Message = require('./models/Message');
 const ChatApp = require('./models/ChatApp');
 const companyRoutes = require("./routes/companyRoutes");
 const freelancerRoutes = require("./routes/FreelancerRoutes");
+const jobRoutes = require('./routes/jobRoutes');
 
 const app = express();
 
 // Middleware
-app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
-  credentials: true,
-}));
+app.use(cors());
 app.use(express.json());
 
 // Connect to MongoDB
@@ -37,7 +35,7 @@ const companies = new Map();
 // Company Routes
 app.use('/api/company', companyRoutes);
 app.use("/api", freelancerRoutes);
-app.use("/api", require('./routes/jobRoutes'));
+app.use('/api', jobRoutes);
 
 
 const server = http.createServer(app);

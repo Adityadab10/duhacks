@@ -6,6 +6,18 @@ import { Search, ChevronLeft, ChevronRight, Briefcase, Users, BarChart, Clock } 
 import JobBoard from "./JobBoard";
 import ChatApp from "../ChatApp";
 import { useChat } from "../../context/ChatContext";
+import axios from "axios";
+
+// Add error handling utility
+const handleAxiosError = (error) => {
+  if (error.response) {
+    return error.response.data.message || 'Server error occurred';
+  }
+  if (error.request) {
+    return 'No response from server';
+  }
+  return 'Error setting up request';
+};
 
 const CompanyDashboard = () => {
   const navigate = useNavigate();
@@ -14,10 +26,43 @@ const CompanyDashboard = () => {
   const [selectedFreelancer, setSelectedFreelancer] = useState(null);
   const { startChat } = useChat();
   const [searchTerm, setSearchTerm] = useState("");
+  const [jobs, setJobs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     // For testing, we'll use a fixed company ID
     setUserId("company-1");
+  }, []);
+
+  // Update the useEffect hook that fetches jobs
+  useEffect(() => {
+    const fetchJobs = async () => {
+      try {
+        setLoading(true);
+        const userData = localStorage.getItem('userData');
+        const companyId = userData ? JSON.parse(userData).id : null;
+        
+        const response = await axios.get(`http://localhost:4000/api/jobs/company/${companyId}`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+
+        if (response.data && Array.isArray(response.data)) {
+          setJobs(response.data);
+          console.log('Jobs fetched successfully');
+        } else {
+          setError('No jobs found');
+        }
+      } catch (err) {
+        setError(handleAxiosError(err));
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchJobs();
   }, []);
 
   const handleStartChat = (freelancerId) => {
@@ -31,12 +76,6 @@ const CompanyDashboard = () => {
     { title: "Total Applications", value: "126", icon: Users, color: "text-green-500" },
     { title: "Hired Freelancers", value: "8", icon: BarChart, color: "text-purple-500" },
     { title: "Avg. Time to Hire", value: "5 days", icon: Clock, color: "text-orange-500" }
-  ];
-
-  const activeProjects = [
-    { title: "Web Design", budget: "450$", applications: "15" },
-    { title: "App Design", budget: "300$", applications: "8" },
-    { title: "UI/UX Design", budget: "600$", applications: "12" }
   ];
 
   return (
@@ -66,7 +105,7 @@ const CompanyDashboard = () => {
         <Card className="mb-8">
           <CardContent className="p-6">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-semibold">Working On</h2>
+              <h2 className="text-xl font-semibold">Browse Jobs</h2>
               <div className="flex gap-2">
                 <Button variant="outline" size="icon">
                   <ChevronLeft className="w-4 h-4" />
@@ -76,20 +115,40 @@ const CompanyDashboard = () => {
                 </Button>
               </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {activeProjects.map((project, index) => (
-                <Card key={index} className="hover:shadow-lg transition-shadow">
-                  <CardContent className="p-4">
-                    <div className="flex justify-between items-center mb-2">
-                      <h3 className="font-semibold">{project.title}</h3>
-                      <span className="px-2 py-1 bg-gray-200 text-gray-700 rounded">{project.budget}</span>
-
-                    </div>
-                    <p className="text-sm text-gray-600">{project.applications} applications</p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+            {loading ? (
+              <div className="text-center py-4">Loading jobs...</div>
+            ) : error ? (
+              <div className="text-center text-red-500 py-4">{error}</div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {jobs.map((job, index) => (
+                  <Card key={job._id} className="hover:shadow-lg transition-shadow">
+                    <CardContent className="p-4">
+                      <div className="flex justify-between items-center mb-2">
+                        <h3 className="font-semibold">{job.jobTitle}</h3>
+                        <span className="px-2 py-1 bg-gray-200 text-gray-700 rounded">
+                          ${job.pay}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-600 mb-2">{job.description}</p>
+                      <div className="flex flex-wrap gap-2">
+                        {job.skills.map((skill, i) => (
+                          <span 
+                            key={i}
+                            className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded"
+                          >
+                            {skill}
+                          </span>
+                        ))}
+                      </div>
+                      <p className="text-xs text-gray-500 mt-2">
+                        {new Date(job.time).toLocaleDateString()}
+                      </p>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
