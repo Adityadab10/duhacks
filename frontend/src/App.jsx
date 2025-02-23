@@ -14,7 +14,6 @@ import CompanyDashboard from "./components/company/CompanyDashboard";
 import JobBoard from "./components/company/JobBoard";
 import AboutUs from "./components/ui/AboutUs";
 import CompanyHero from "./components/company/CompanyHero";
-import ChatApp from "./components/ChatApp";
 import { ChatProvider } from "./context/ChatContext";
 
 function App() {
@@ -60,7 +59,6 @@ function App() {
 
           {/* Render ChatApp only if userId is set */}
           {userId && <ChatApp userId={userId} />}
-          
         </div>
       </Router>
     </ChatProvider>
