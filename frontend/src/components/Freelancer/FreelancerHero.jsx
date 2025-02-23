@@ -106,8 +106,8 @@ const ProfileSection = ({ userData }) => {
           alt="Profile"
           className="w-20 h-20 rounded-full mb-4"
         />
-        <h2 className="text-xl font-bold text-[#2F4156]">{userData.name}</h2>
-        <p className="text-[#567C8D]">{userData.email}</p>
+        <h2 className="text-xl font-bold text-[#2F4156]">Name:{userData.name}</h2>
+        <p className="text-[#567C8D]">Email: {userData.email}</p>
         
         {/* Availability Badge */}
         <span className={`mt-2 px-3 py-1 rounded-full text-sm ${

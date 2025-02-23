@@ -5,7 +5,6 @@ import Input from "@/components/ui/input";
 import Button from "@/components/ui/button";
 import { Search, ChevronLeft, ChevronRight, Briefcase, Users, BarChart, Clock } from "lucide-react";
 import JobBoard from "./JobBoard";
-import ChatList from "../ChatList";
 import ChatApp from "../ChatApp";
 import { useChat } from "../../context/ChatContext";
 

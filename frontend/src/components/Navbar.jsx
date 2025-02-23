@@ -1,20 +1,33 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Menu, X, ChevronDown } from "lucide-react";
+import { Menu, X } from "lucide-react";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [activeItem, setActiveItem] = useState("/");
   const [isScrolled, setIsScrolled] = useState(false);
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const storedUser = JSON.parse(localStorage.getItem("user"));
+    if (storedUser) {
+      setUser(storedUser);
+    }
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+    setUser(null);
+    window.location.reload();
+  };
 
   const navItems = [
     { path: "/", label: "Home" },
     { path: "/about", label: "About" },
-    { path: "/section", label: "Services" }, // Changed path to /section
+    { path: "/section", label: "Services" },
     { path: "/contact", label: "Contact" }
   ];
 
-  // Add scroll effect
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
@@ -65,9 +78,19 @@ export default function Navbar() {
                 </Link>
               </li>
             ))}
+            {user && (
+              <li>
+                <button
+                  onClick={handleLogout}
+                  className="px-4 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 transition-all"
+                >
+                  Logout
+                </button>
+              </li>
+            )}
             <li className="ml-4">
               <Link
-                to="/section"  // Changed from /get-started to /section
+                to="/section"
                 className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-blue-400 text-white rounded-full text-sm font-medium hover:from-blue-500 hover:to-blue-300 transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
               >
                 Get Started
@@ -99,9 +122,19 @@ export default function Navbar() {
                 </Link>
               </li>
             ))}
+            {user && (
+              <li>
+                <button
+                  onClick={handleLogout}
+                  className="block w-full px-4 py-3 bg-red-500 text-white rounded-lg text-sm font-medium text-center hover:bg-red-600 transition-all"
+                >
+                  Logout
+                </button>
+              </li>
+            )}
             <li className="pt-2">
               <Link
-                to="/section"  // Changed from /get-started to /section
+                to="/section"
                 className="block px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-400 text-white rounded-lg text-sm font-medium text-center hover:from-blue-500 hover:to-blue-300 transition-all duration-300 shadow-md"
                 onClick={() => setIsOpen(false)}
               >
