@@ -2,16 +2,15 @@ import React, { useState, useRef, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, MessageCircle, Share2, ArrowRight, Star, Search } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { auth } from '../../firebaseConfig';
-import ChatDrawer from '../ChatDrawer';
-import ChatList from '../ChatList';
+import axios from 'axios';
 import { useChat } from '../../context/ChatContext';
-import ChatComponent from '../ChatComponent';
-
 
 const ScrollableCategories = ({ categories }) => {
   const scrollRef = useRef(null);
+  
   const [showProgress, setShowProgress] = useState(false);
   const navigate = useNavigate();
+  
 
   const progressOptions = [
     { label: "Just Started", value: "20%" },
@@ -190,19 +189,14 @@ const ProfileSection = ({ userData }) => {
   );
 };
 
-
 const FreelancerDashboard = () => {
   const [activeCategory, setActiveCategory] = useState('Web Design');
   const [currentPage, setCurrentPage] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortOption, setSortOption] = useState('');
-  const [activeChats, setActiveChats] = useState([]); // Initialize with an empty array
-  const handleChatClick = (chat) => {
-    setSelectedChat(chat);
-  };
-  
   const [showChatList, setShowChatList] = useState(false);
   const [selectedChat, setSelectedChat] = useState(null);
+  const { getUserChats } = useChat();
 
   const navigate = useNavigate();
   const [userData, setUserData] = useState({
@@ -241,28 +235,51 @@ const FreelancerDashboard = () => {
     return () => unsubscribe();
   }, [navigate]);
 
-  // Retrieve the stored JSON string from localStorage
-const userDataString = localStorage.getItem("user"); // Replace with your actual key
-
-// Parse the JSON string into an object
-if (userDataString) {
-  const userData = JSON.parse(userDataString);
-  const firebaseUID = userData.Uid
-const email = userData.email 
-const name = userData.displayName
-const photoURL = userData.photoURL
-console.log(firebaseUID,email,name,photoURL)
-  // Access specific properties like email
-  // console.log("User Email:", userData);
-} else {
-  console.log("No user data found in localStorage");
-}
-
+  useEffect(() => {
+    const fetchFreelancerProfile = async () => {
+      try {
+        console.log("Fetching Freelancer Profile...");
+  
+        // Retrieve user data from localStorage
+        const user = JSON.parse(localStorage.getItem("user"));
+        if (!user) {
+          console.error("User not found in localStorage.");
+          return;
+        }
+  
+        console.log("Retrieved User from localStorage:", user);
+        console.log("Firebase UID:", user.uid); // Log the Firebase UID
+  
+        // Make the API request
+        const url = `http://localhost:4000/api/profile/${user.uid}`;
+        console.log("Requesting API:", url);
+  
+        const response = await axios.get(url);
+  
+        console.log("API Response:", response);
+        console.log("Fetched Freelancer Profile:", response.data);
+  
+        setUserData(response.data);
+      } catch (error) {
+        console.error("Error fetching freelancer profile:", error);
+        
+        // Check if error has response (API error) or it's a network error
+        if (error.response) {
+          console.error("Server responded with:", error.response.status, error.response.data);
+        } else if (error.request) {
+          console.error("No response received from server:", error.request);
+        } else {
+          console.error("Axios request error:", error.message);
+        }
+      }
+    };
+  
+    fetchFreelancerProfile();
+  }, []);
 
   const categories = [
     { name: 'Web Design', price: '450$', count: '15' },
     { name: 'App Design', price: '300$', count: '8' },
-    
   ];
 
   const projects = [
@@ -287,7 +304,6 @@ console.log(firebaseUID,email,name,photoURL)
       budget: '450$',
       deadline: '2025-03-05'
     },
-  
   ];
 
   const projectsPerPage = 3;
@@ -331,54 +347,25 @@ console.log(firebaseUID,email,name,photoURL)
         <div className="grid grid-cols-4 gap-8">
           {/* Profile Section */}
           <div className="col-span-1">
-            <div className="bg-white rounded-lg p-6 shadow-lg">
-              <div className="flex flex-col items-center mb-6">
-                <img
-                  src={userData.photoURL || "https://via.placeholder.com/100"}
-                  alt="Profile"
-                  className="w-20 h-20 rounded-full mb-4"
-                />
-                <h2 className="text-xl font-bold text-[#2F4156]">{userData.displayName}</h2>
-                <p className="text-[#567C8D]">{userData.email}</p>
-              </div>
+            <ProfileSection userData={userData} />
+            {/* Statistics Section */}
+            <div className="bg-white rounded-lg p-6 shadow-lg mt-8">
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <span className="text-[#567C8D]">Avg Earnings</span>
-                  <span className="font-bold text-[#2F4156]">500$</span>
+                  <span className="text-[#567C8D]">Total Applications</span>
+                  <span className="font-bold text-[#2F4156]">50</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-[#567C8D]">Projects Completed</span>
-                  <span className="font-bold text-[#2F4156]">24</span>
+                  <span className="text-[#567C8D]">Hired Jobs</span>
+                  <span className="font-bold text-[#2F4156]">20</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-[#567C8D]">Rating</span>
-                  <div className="flex text-yellow-400">
-                    {[...Array(4)].map((_, i) => (
-                      <Star key={i} className="h-4 w-4 fill-current" />
-                    ))}
-                  </div>
+                  <span className="text-[#567C8D]">Completion Rate</span>
+                  <span className="font-bold text-[#2F4156]">80%</span>
                 </div>
-              </div>
-
-              {/* Statistics Section */}
-              <div className="bg-white rounded-lg p-6 shadow-lg mt-8">
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-[#567C8D]">Total Applications</span>
-                    <span className="font-bold text-[#2F4156]">50</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-[#567C8D]">Hired Jobs</span>
-                    <span className="font-bold text-[#2F4156]">20</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-[#567C8D]">Completion Rate</span>
-                    <span className="font-bold text-[#2F4156]">80%</span>
-                  </div>
-                  <button className="bg-[#2F4156] text-white px-4 py-2 rounded-md hover:bg-[#567C8D] transition-colors w-full">
-                    Track All Applications
-                  </button>
-                </div>
+                <button className="bg-[#2F4156] text-white px-4 py-2 rounded-md hover:bg-[#567C8D] transition-colors w-full">
+                  Track All Applications
+                </button>
               </div>
             </div>
           </div>
@@ -473,63 +460,13 @@ console.log(firebaseUID,email,name,photoURL)
         </div>
       </div>
 
-      {/* Chat Components */}
-      <div style={{ position: 'fixed', bottom: '20px', left: '20px', zIndex: 9999 }}>
-      
-
-        <button
-          onClick={() => setShowChatList(!showChatList)}
-          style={{
-            width: '60px',
-            height: '60px',
-            backgroundColor: '#2563eb',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            border: 'none',
-            cursor: 'pointer',
-            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-          }}
-        >
-          <MessageCircle color="white" size={24} />
-        </button>
-
-        {showChatList && !selectedChat && (
-          <div className="absolute bottom-16 left-0 w-72 bg-white rounded-lg shadow-xl" style={{ zIndex: 9999 }}>
-            <div className="p-4 border-b">
-              <h3 className="font-semibold">Messages</h3>
-            </div>
-            <div className="p-2">
-              {activeChats.map((chat) => (
-                <button
-                  key={chat.id}
-                  onClick={() => handleStartChat(chat.id)}
-                  className="w-full flex items-center p-3 hover:bg-gray-50 rounded-lg"
-                >
-                  <div className="flex items-center space-x-3">
-                    <div className="w-2 h-2 bg-green-500 rounded-full" />
-                    <div>
-                      <span className="font-medium">{chat.name}</span>
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {selectedChat && (
-          <ChatComponent
-            chat={selectedChat}
-            userId={userData.email}
-            onClose={() => setSelectedChat(null)}
-          />
-        )}
-
-
-
-      </div>
+      {/* Chat Drawer */}
+      {/* <ChatDrawer
+        isOpen={isChatOpen}
+        onClose={() => setIsChatOpen(false)}
+        userId={userId}
+      />
+      <ChatList onChatSelect={handleStartChat} />*/}
     </div>
   );
 };
