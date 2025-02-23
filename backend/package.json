@@ -1,21 +1,17 @@
 {
   "dependencies": {
-<<<<<<< HEAD
-=======
     "bcryptjs": "^3.0.2",
->>>>>>> f6cada592e64525ae0612231c668529b9f9b1bb1
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "firebase": "^11.3.1",
-<<<<<<< HEAD
-=======
+    "http": "^0.0.1-security",
     "jsonwebtoken": "^9.0.2",
->>>>>>> f6cada592e64525ae0612231c668529b9f9b1bb1
     "mongoose": "^8.10.1",
     "socket.io": "^4.8.1"
   },
   "name": "backend",
+  "type": "commonjs",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
@@ -24,6 +20,5 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
   "description": ""
 }

@@ -1,291 +1,189 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { 
-  Mail, Phone, MapPin, Briefcase, 
-  DollarSign, Globe, FileText, CheckCircle,
-  X, Camera, Edit2, Save, AlertCircle, Github
-} from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useRef } from "react";
+import { io } from "socket.io-client";
+import axios from "axios";
+import { Send, AlertCircle } from "lucide-react";
 
-const FreelancerProfile = ({ isNewUser = false }) => {
-  const navigate = useNavigate();
-  const [profile, setProfile] = useState(null);
-  const [firebaseUID, setFirebaseUID] = useState(null);
-  const [activeField, setActiveField] = useState(null);
-  const [editedValues, setEditedValues] = useState({});
-  const user = JSON.parse(localStorage.getItem("user"));
-  console.log(user.photoURL)
+const socket = io("http://localhost:4000");
+
+export default function ChatApp({ userId, chatPartnerId, userRole }) {
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState("");
+  const [onlineUsers, setOnlineUsers] = useState(new Set());
+  const [error, setError] = useState(null);
+  const messagesEndRef = useRef(null);
+  const roomId = [userId, chatPartnerId].sort().join("_");
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
   useEffect(() => {
-    const fetchFreelancerProfile = async () => {
-      try {
-        const user = JSON.parse(localStorage.getItem("user"));
-        if (!user) return;
+    scrollToBottom();
+  }, [messages]);
 
-        const response = await axios.get(`http://localhost:4000/api/profile/${user.uid}`);
-        setProfile(response.data);
-        setFirebaseUID(user.uid);
-        setEditedValues(response.data);
-      } catch (error) {
-        console.error("Error fetching freelancer profile:", error);
+  useEffect(() => {
+    // Join chat room
+    socket.emit("joinRoom", { roomId, userId, userType: userRole });
+
+    // Load past messages
+    const loadMessages = async () => {
+      try {
+        const res = await axios.get(`http://localhost:4000/api/messages/${roomId}`);
+        if (res.data && Array.isArray(res.data)) {
+          setMessages(res.data);
+        }
+      } catch (err) {
+        setError("Failed to load messages");
+        console.error("Error loading messages:", err);
+      }
+    };
+    loadMessages();
+
+    // Socket event listeners
+    const messageListener = (message) => {
+      setMessages((prev) => [...prev, message]);
+      setError(null);
+    };
+
+    const recentMessagesListener = (messages) => {
+      if (Array.isArray(messages)) {
+        setMessages(messages);
+        setError(null);
       }
     };
 
-    fetchFreelancerProfile();
-  }, []);
-
-  const calculateCompletion = () => {
-    if (!profile) return 0;
-    
-    const requiredFields = {
-      name: profile.name,
-      email: profile.email,
-      bio: profile.bio,
-      hourlyRate: profile.hourlyRate > 0,
-      github: profile.github,
-      portfolio: profile.portfolio,
-      skills: Array.isArray(profile.skills) && profile.skills.length > 0,
-      resume: profile.resume
+    const userJoinedListener = ({ onlineUsers: users }) => {
+      setOnlineUsers(new Set(users));
     };
 
-    const completedFields = Object.values(requiredFields).filter(Boolean).length;
-    return Math.round((completedFields / Object.keys(requiredFields).length) * 100);
-  };
+    const userLeftListener = ({ onlineUsers: users }) => {
+      setOnlineUsers(new Set(users));
+    };
 
-  const handleFieldEdit = (field) => {
-    setActiveField(field);
-  };
+    const errorListener = (errorMessage) => {
+      setError(errorMessage);
+      console.error("Socket error:", errorMessage);
+    };
 
-  const handleFieldSave = async (field) => {
-    try {
-      await axios.put(`http://localhost:4000/api/profile/${firebaseUID}`, editedValues);
-      setProfile(editedValues);
-      setActiveField(null);
-    } catch (error) {
-      console.error("Error updating profile:", error);
+    socket.on("message", messageListener);
+    socket.on("recentMessages", recentMessagesListener);
+    socket.on("userJoined", userJoinedListener);
+    socket.on("userLeft", userLeftListener);
+    socket.on("error", errorListener);
+
+    return () => {
+      socket.off("message", messageListener);
+      socket.off("recentMessages", recentMessagesListener);
+      socket.off("userJoined", userJoinedListener);
+      socket.off("userLeft", userLeftListener);
+      socket.off("error", errorListener);
+    };
+  }, [roomId, userId, userRole]);
+
+  const sendMessage = async () => {
+    if (input.trim()) {
+      try {
+        const messageData = {
+          roomId,
+          sender: userId || "company-1",
+          content: input.trim(),
+          timestamp: new Date().toISOString()
+        };
+
+        const response = await axios.post("http://localhost:4000/api/messages", messageData);
+        
+        if (response.data) {
+          socket.emit("message", response.data);
+          setInput("");
+          setError(null);
+          setMessages(prev => [...prev, response.data]);
+        }
+      } catch (error) {
+        console.error("Error sending message:", error);
+        setError("Failed to send message. Please try again.");
+      }
     }
   };
 
-  const handleChange = (field, value) => {
-    setEditedValues(prev => ({ ...prev, [field]: value }));
+  const formatTime = (timestamp) => {
+    return new Date(timestamp).toLocaleTimeString([], { 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
   };
-
-  const handleSkillAdd = () => {
-    const skill = document.getElementById('skillInput').value.trim();
-    if (skill && (!editedValues.skills || !editedValues.skills.includes(skill))) {
-      setEditedValues(prev => ({
-        ...prev,
-        skills: [...(prev.skills || []), skill]
-      }));
-      document.getElementById('skillInput').value = '';
-    }
-  };
-
-  const handleSkillRemove = (skillToRemove) => {
-    setEditedValues(prev => ({
-      ...prev,
-      skills: prev.skills.filter(skill => skill !== skillToRemove)
-    }));
-  };
-
-  if (!profile) return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-    </div>
-  );
-
-  const EditableField = ({ field, value, label, icon: Icon, type = "text", editable = true }) => (
-    <div className="mb-6 relative group">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center text-gray-700 mb-2">
-          {Icon && <Icon size={18} className="mr-2" />}
-          <span className="font-medium">{label}</span>
-        </div>
-        {editable && (
-          <button
-            onClick={() => activeField === field ? handleFieldSave(field) : handleFieldEdit(field)}
-            className="text-sm px-3 py-1 rounded-md transition-colors hover:bg-gray-100"
-          >
-            {activeField === field ? <Save size={16} /> : <Edit2 size={16} />}
-          </button>
-        )}
-      </div>
-      {activeField === field && editable ? (
-        <input
-          type={type}
-          value={editedValues[field] || ''}
-          onChange={(e) => handleChange(field, e.target.value)}
-          className="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          autoFocus
-        />
-      ) : (
-        <div className="px-4 py-2 bg-gray-50 rounded-md">{value || 'Not set'}</div>
-      )}
-    </div>
-  );
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 pt-24">
-      <div className="max-w-4xl mx-auto px-4">
-        {/* Profile Header */}
-        <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
-          <div className="flex items-center space-x-6">
-            <div className="relative group">
-              <div className="w-24 h-24 rounded-full overflow-hidden">
-                <img
-                  src={profile.profilePicture || (user && user.photoURL) || "https://via.placeholder.com/100"}
-                  alt={profile.name || "Profile"}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                <Camera className="text-white" size={24} />
-              </div>
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-800">{profile.name}</h1>
-              <p className="text-gray-600">{profile.email}</p>
-              <div className="mt-2">
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                  <CheckCircle size={14} className="mr-1" /> Available for work
-                </span>
-              </div>
-            </div>
-          </div>
+    <div className="flex flex-col h-[500px] max-w-2xl mx-auto rounded-lg shadow-lg bg-white">
+      {/* Chat Header */}
+      <div className="p-4 border-b flex justify-between items-center bg-gray-50 rounded-t-lg">
+        <div>
+          <h2 className="text-lg font-semibold">
+            Chat with {userRole === "company" ? "Freelancer" : "Company"}
+          </h2>
+          <p className="text-sm text-gray-500">
+            {onlineUsers.has(chatPartnerId) ? "Online" : "Offline"}
+          </p>
         </div>
+      </div>
 
-        {/* Completion Alert */}
-        {calculateCompletion() < 100 && (
-          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6 rounded-md">
-            <div className="flex items-center">
-              <AlertCircle className="text-yellow-400 mr-3" size={20} />
-              <p className="text-sm text-yellow-700">
-                Your profile is {calculateCompletion()}% complete. Complete your profile to increase visibility.
+      {/* Messages Container */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {error && (
+          <div className="flex items-center gap-2 text-red-500 bg-red-50 p-2 rounded">
+            <AlertCircle size={16} />
+            <span>{error}</span>
+          </div>
+        )}
+        
+        {messages.map((msg, index) => (
+          <div
+            key={index}
+            className={`flex ${msg.sender === userId ? "justify-end" : "justify-start"}`}
+          >
+            <div
+              className={`max-w-[70%] rounded-lg p-3 ${
+                msg.sender === userId
+                  ? "bg-blue-500 text-white"
+                  : "bg-gray-100 text-gray-900"
+              }`}
+            >
+              <p className="break-words">{msg.content}</p>
+              <p className={`text-xs mt-1 ${
+                msg.sender === userId ? "text-blue-100" : "text-gray-500"
+              }`}>
+                {formatTime(msg.timestamp)}
               </p>
             </div>
           </div>
-        )}
+        ))}
+        <div ref={messagesEndRef} />
+      </div>
 
-        {/* Main Profile Content */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Left Column */}
-          <div className="space-y-6">
-            <div className="bg-white rounded-xl shadow-sm p-6">
-              <h2 className="text-lg font-semibold mb-4">Basic Information</h2>
-              <EditableField
-                field="email"
-                value={profile.email}
-                label="Email"
-                icon={Mail}
-                type="email"
-                editable={false}
-              />
-              <EditableField
-                field="portfolio"
-                value={profile.portfolio}
-                label="Portfolio URL"
-                icon={Globe}
-              />
-              <EditableField
-                field="github"
-                value={profile.github}
-                label="GitHub Profile"
-                icon={Github}
-              />
-            </div>
-
-            <div className="bg-white rounded-xl shadow-sm p-6">
-              <h2 className="text-lg font-semibold mb-4">Professional Details</h2>
-              <EditableField
-                field="hourlyRate"
-                value={`$${profile.hourlyRate}/hr`}
-                label="Hourly Rate"
-                icon={DollarSign}
-                type="number"
-              />
-              <EditableField
-                field="availability"
-                value={profile.availability}
-                label="Availability"
-                icon={Briefcase}
-              />
-            </div>
-          </div>
-
-          {/* Right Column */}
-          <div className="space-y-6">
-            <div className="bg-white rounded-xl shadow-sm p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold">Skills</h2>
-                {activeField === 'skills' ? (
-                  <button
-                    onClick={() => handleFieldSave('skills')}
-                    className="text-sm px-3 py-1 rounded-md bg-blue-500 text-white hover:bg-blue-600"
-                  >
-                    Save Skills
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => handleFieldEdit('skills')}
-                    className="text-sm px-3 py-1 rounded-md hover:bg-gray-100"
-                  >
-                    <Edit2 size={16} />
-                  </button>
-                )}
-              </div>
-              
-              {activeField === 'skills' && (
-                <div className="mb-4">
-                  <div className="flex gap-2">
-                    <input
-                      id="skillInput"
-                      type="text"
-                      placeholder="Add a skill"
-                      className="flex-1 px-4 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                    <button
-                      onClick={handleSkillAdd}
-                      className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-                    >
-                      Add
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              <div className="flex flex-wrap gap-2">
-                {editedValues.skills?.map((skill, index) => (
-                  <span
-                    key={index}
-                    className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-50 text-blue-700"
-                  >
-                    {skill}
-                    {activeField === 'skills' && (
-                      <button
-                        onClick={() => handleSkillRemove(skill)}
-                        className="ml-2 hover:text-blue-900"
-                      >
-                        <X size={14} />
-                      </button>
-                    )}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-sm p-6">
-              <h2 className="text-lg font-semibold mb-4">Resume</h2>
-              <EditableField
-                field="resume"
-                value={profile.resume}
-                label="Resume"
-                icon={FileText}
-              />
-            </div>
-          </div>
+      {/* Input Area */}
+      <div className="p-4 border-t">
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+              }
+            }}
+            placeholder="Type a message..."
+            className="flex-1 p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <button
+            onClick={sendMessage}
+            disabled={!input.trim()}
+            className="p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Send size={20} />
+          </button>
         </div>
       </div>
     </div>
   );
-};
-
-export default FreelancerProfile;
+}

@@ -1,11 +1,13 @@
-import React, { useRef,useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Eye, EyeOff, ArrowRight, Building2, Mail, Briefcase, Lock, Globe } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { auth, provider, signInWithPopup } from "../../firebaseConfig";
 
 const CompanyRegistration = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showTokenPopup, setShowTokenPopup] = useState(false);
+  const [generatedToken, setGeneratedToken] = useState('');
+  const [errors, setErrors] = useState({});
   const navigate = useNavigate();
 
   const companyNameRef = useRef();
@@ -56,26 +58,30 @@ const CompanyRegistration = () => {
       newErrors.agreeToTerms = 'You must agree to the terms and conditions';
     }
 
+    setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+
     setLoading(true);
 
     try {
-      // Validate form
-      if (!validateForm()) {
-        setLoading(false);
-        return;
-      }
+      const token = generateCompanyToken();
+      setGeneratedToken(token);
 
       const formData = {
         companyName: companyNameRef.current.value,
         email: emailRef.current.value,
         password: passwordRef.current.value,
         industry: industryRef.current.value,
-        website: websiteRef.current.value || undefined
+        website: websiteRef.current.value || undefined,
+        token: token
       };
 
       const response = await fetch("http://localhost:4000/api/company/register", {
@@ -94,16 +100,27 @@ const CompanyRegistration = () => {
 
       // Store token and user data
       localStorage.setItem("token", data.token);
-      localStorage.setItem("userData", JSON.stringify(data.company));
+      localStorage.setItem("userData", JSON.stringify({
+        ...data.company,
+        token: token
+      }));
 
-      // Redirect to dashboard
-      navigate("/company/dashboard");
+      // Show token popup
+      setShowTokenPopup(true);
+
     } catch (error) {
       console.error("Registration error:", error);
-      alert(error.message || "Registration failed. Please try again.");
+      setErrors({ submit: error.message || "Registration failed. Please try again." });
+      setShowTokenPopup(false); // Make sure popup is hidden on error
     } finally {
       setLoading(false);
     }
+  };
+
+  const renderError = (fieldName) => {
+    return errors[fieldName] ? (
+      <p className="mt-1 text-sm text-red-600">{errors[fieldName]}</p>
+    ) : null;
   };
 
   return (
@@ -128,10 +145,13 @@ const CompanyRegistration = () => {
                 <input
                   ref={companyNameRef}
                   type="text"
-                  className="pl-10 block w-full h-11 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white"
+                  className={`pl-10 block w-full h-11 rounded-lg border ${
+                    errors.companyName ? 'border-red-300' : 'border-gray-300'
+                  } focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white`}
                   placeholder="Enter company name"
                 />
               </div>
+              {renderError('companyName')}
             </div>
 
             {/* Email */}
@@ -146,10 +166,13 @@ const CompanyRegistration = () => {
                 <input
                   ref={emailRef}
                   type="email"
-                  className="pl-10 block w-full h-11 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white"
+                  className={`pl-10 block w-full h-11 rounded-lg border ${
+                    errors.email ? 'border-red-300' : 'border-gray-300'
+                  } focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white`}
                   placeholder="Enter email address"
                 />
               </div>
+              {renderError('email')}
             </div>
 
             {/* Password */}
@@ -164,7 +187,9 @@ const CompanyRegistration = () => {
                 <input
                   ref={passwordRef}
                   type={showPassword ? "text" : "password"}
-                  className="pl-10 pr-10 block w-full h-11 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white"
+                  className={`pl-10 pr-10 block w-full h-11 rounded-lg border ${
+                    errors.password ? 'border-red-300' : 'border-gray-300'
+                  } focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white`}
                   placeholder="Create a password"
                 />
                 <button
@@ -175,6 +200,7 @@ const CompanyRegistration = () => {
                   {showPassword ? <EyeOff className="h-5 w-5 text-gray-400" /> : <Eye className="h-5 w-5 text-gray-400" />}
                 </button>
               </div>
+              {renderError('password')}
             </div>
 
             {/* Confirm Password */}
@@ -189,10 +215,13 @@ const CompanyRegistration = () => {
                 <input
                   ref={confirmPasswordRef}
                   type={showPassword ? "text" : "password"}
-                  className="pl-10 block w-full h-11 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white"
+                  className={`pl-10 block w-full h-11 rounded-lg border ${
+                    errors.confirmPassword ? 'border-red-300' : 'border-gray-300'
+                  } focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white`}
                   placeholder="Confirm password"
                 />
               </div>
+              {renderError('confirmPassword')}
             </div>
 
             {/* Industry */}
@@ -207,10 +236,13 @@ const CompanyRegistration = () => {
                 <textarea
                   ref={industryRef}
                   rows="3"
-                  className="pl-10 block w-full rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white resize-none"
+                  className={`pl-10 block w-full rounded-lg border ${
+                    errors.industry ? 'border-red-300' : 'border-gray-300'
+                  } focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white resize-none`}
                   placeholder="Describe your industry"
                 />
               </div>
+              {renderError('industry')}
             </div>
 
             {/* Website */}
@@ -236,12 +268,16 @@ const CompanyRegistration = () => {
               <input
                 ref={agreeToTermsRef}
                 type="checkbox"
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                className={`h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded ${
+                  errors.agreeToTerms ? 'border-red-300' : ''
+                }`}
               />
               <label className="ml-2 block text-sm text-gray-700">
                 I agree to the <a href="#" className="text-blue-600 hover:text-blue-500">Terms and Conditions</a>
               </label>
             </div>
+            {renderError('agreeToTerms')}
+            {renderError('submit')}
 
             <button
               type="submit"
@@ -266,6 +302,7 @@ const CompanyRegistration = () => {
               <p className="text-gray-600">
                 Already have an account?{" "}
                 <button
+                  type="button"
                   onClick={() => navigate('/company/login')}
                   className="font-medium text-blue-600 hover:text-blue-500"
                   disabled={loading}
@@ -277,6 +314,42 @@ const CompanyRegistration = () => {
           </form>
         </div>
       </div>
+
+      {/* Token Popup */}
+      {showTokenPopup && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">Registration Successful!</h3>
+            <p className="text-gray-600 mb-4">
+              Please save your token number. You will need it for future logins:
+            </p>
+            <div className="bg-gray-100 p-4 rounded-lg mb-6 break-all">
+              <p className="font-mono text-blue-600 select-all">{generatedToken}</p>
+            </div>
+            <div className="flex justify-end space-x-4">
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(generatedToken);
+                  alert('Token copied to clipboard!');
+                }}
+                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
+              >
+                Copy Token
+              </button>
+              <button
+                onClick={() => {
+                  setShowTokenPopup(false);
+                  console.log('Navigating to dashboard...'); // Add this line
+                  navigate('/company/dashboard');
+                }}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              >
+                Go to Dashboard
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

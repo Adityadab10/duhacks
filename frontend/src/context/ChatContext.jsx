@@ -1,47 +1,115 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { io } from 'socket.io-client';
+import React, { createContext, useState, useContext, useEffect } from "react";
+import { io } from "socket.io-client";
+import axios from "axios";
 
+// Create Chat Context
 const ChatContext = createContext();
 
-export const useChat = () => {
-  return useContext(ChatContext);
+// Initialize socket connection
+const socket = io("http://localhost:4000");
+
+// Test data for development
+const testChats = [
+  {
+    roomId: "test_room_1",
+    partnerId: "test-freelancer-1",
+    partnerName: "John Doe",
+    lastMessage: "Hi, I'm interested in your project",
+    isOnline: true,
+  }
+];
+
+const testMessages = {
+  test_room_1: [
+    {
+      id: 1,
+      sender: "test-freelancer-1",
+      content: "Hi, I'm interested in your project",
+      timestamp: new Date(Date.now() - 3600000).toISOString(),
+    },
+    {
+      id: 2,
+      sender: "company-1",
+      content: "Great! Can you tell me about your experience?",
+      timestamp: new Date(Date.now() - 1800000).toISOString(),
+    },
+  ]
 };
 
 export const ChatProvider = ({ children }) => {
-  const [socket, setSocket] = useState(null);
-  const [activeChats, setActiveChats] = useState([]);
-  const [currentChat, setCurrentChat] = useState(null);
+  const [messages, setMessages] = useState(testMessages);
+  const [currentChatRoom, setCurrentChatRoom] = useState(null);
+  const [activeChats, setActiveChats] = useState(testChats);
 
   useEffect(() => {
-    const newSocket = io('http://localhost:4000');
-    setSocket(newSocket);
+    socket.on("message", (message) => {
+      setMessages((prevMessages) => ({
+        ...prevMessages,
+        [message.chatRoomId]: [...(prevMessages[message.chatRoomId] || []), message],
+      }));
+    });
 
-    return () => newSocket.close();
+    socket.on("userJoined", ({ userId, userType, onlineUsers }) => {
+      setActiveChats(prev => prev.map(chat => ({
+        ...chat,
+        isOnline: onlineUsers.includes(chat.partnerId)
+      })));
+    });
+
+    return () => {
+      socket.off("message");
+      socket.off("userJoined");
+    };
   }, []);
 
-  const startChat = (userId, partnerId) => {
-    const roomId = [userId, partnerId].sort().join('-');
-    setCurrentChat({
-      roomId,
-      partnerId
-    });
+  const startChat = (userId, recipientId) => {
+    const chatRoomId = [userId, recipientId].sort().join("_");
+    setCurrentChatRoom(chatRoomId);
     
-    if (socket) {
-      socket.emit('joinRoom', { room: roomId, userId });
+    // Add to active chats if not exists
+    if (!activeChats.find(chat => chat.partnerId === recipientId)) {
+      setActiveChats(prev => [...prev, {
+        roomId: chatRoomId,
+        partnerId: recipientId,
+        partnerName: `User ${recipientId}`,
+        isOnline: false
+      }]);
     }
     
-    // Add to active chats if not already present
-    if (!activeChats.find(chat => chat.roomId === roomId)) {
-      setActiveChats(prev => [...prev, { roomId, partnerId }]);
-    }
+    socket.emit("joinRoom", { roomId: chatRoomId, userId });
+  };
+
+  const sendMessage = (userId, recipientId, content) => {
+    if (!currentChatRoom) return;
+
+    const messageData = {
+      sender: userId,
+      receiver: recipientId,
+      content,
+      chatRoomId: currentChatRoom,
+      timestamp: new Date().toISOString(),
+    };
+
+    socket.emit("message", messageData);
+    setMessages((prevMessages) => ({
+      ...prevMessages,
+      [currentChatRoom]: [...(prevMessages[currentChatRoom] || []), messageData],
+    }));
+
+    // Update last message in active chats
+    setActiveChats(prev => prev.map(chat => 
+      chat.partnerId === recipientId 
+        ? { ...chat, lastMessage: content }
+        : chat
+    ));
   };
 
   const value = {
-    socket,
+    messages,
+    currentChatRoom,
     activeChats,
-    currentChat,
     startChat,
-    setCurrentChat
+    sendMessage
   };
 
   return (
@@ -49,4 +117,8 @@ export const ChatProvider = ({ children }) => {
       {children}
     </ChatContext.Provider>
   );
+};
+
+export const useChat = () => {
+  return useContext(ChatContext);
 };

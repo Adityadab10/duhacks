@@ -1,104 +1,153 @@
+require('dotenv').config();
+
 const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
 const cors = require("cors");
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const mongoose = require("mongoose");
-require("dotenv").config();
+const Message = require('./models/Message');
+const ChatApp = require('./models/ChatApp');
+const companyRoutes = require("./routes/companyRoutes");
+const freelancerRoutes = require("./routes/FreelancerRoutes");
 
 const app = express();
+
+// Middleware
+app.use(cors({
+  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  credentials: true,
+}));
+app.use(express.json());
+
+// Connect to MongoDB
+mongoose.connect(process.env.MONGO_URL, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+}).then(() => {
+  console.log('Connected to MongoDB');
+}).catch(err => {
+  console.error('MongoDB connection error:', err);
+});
+
+// In-memory storage for companies (temporary, replace with DB later)
+const companies = new Map();
+
+// Company Routes
+app.use('/api/company', companyRoutes);
+app.use("/api", freelancerRoutes);
+
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173", // Change this if needed
+    origin: process.env.CLIENT_URL || 'http://localhost:5173',
     methods: ["GET", "POST"]
   }
 });
 
-mongoose
-  .connect(process.env.MONGO_URL)
-  .then(() => console.log("Database Connected"))
-  .catch((err) => console.log("Database not connected", err));
+const activeUsers = new Map();
 
-app.use(cors({
-  origin: 'http://localhost:5173',
-  credentials: true,
-}));
+// Chat message routes
+app.get("/api/messages/:roomId", async (req, res) => {
+  try {
+    const messages = await Message.find({ room: req.params.roomId })
+      .sort({ timestamp: -1 })
+      .limit(50);
+    res.json(messages.reverse());
+  } catch (error) {
+    console.error("Error fetching messages:", error);
+    res.status(500).json({ error: "Error fetching messages" });
+  }
+});
 
-app.use(express.json()); // Add this line to parse JSON bodies
-
-// Routes
-app.use("/api", require("./routes/FreelancerRoutes"));
-
-// Global storage for socket connections
-const userSockets = new Map(); // Fix: Declare userSockets
-const chatRooms = new Map(); // Fix: Declare chatRooms
+app.post("/api/messages", async (req, res) => {
+  try {
+    const { roomId, sender, content } = req.body;
+    const message = new Message({
+      room: roomId,
+      sender,
+      content,
+      timestamp: new Date()
+    });
+    await message.save();
+    res.status(201).json(message);
+  } catch (error) {
+    console.error("Error saving message:", error);
+    res.status(500).json({ error: "Error saving message" });
+  }
+});
 
 io.on("connection", (socket) => {
   console.log("A user connected:", socket.id);
 
-  socket.on("joinRoom", ({ room, userId }) => {
-    socket.join(room);
+  socket.on("joinRoom", async ({ roomId, userId, userType }) => {
+    try {
+      socket.join(roomId);
+      
+      // Store user information
+      activeUsers.set(socket.id, { userId, roomId, userType });
+      
+      // Notify room about new user
+      io.to(roomId).emit("userJoined", {
+        userId,
+        userType,
+        onlineUsers: Array.from(activeUsers.values())
+          .filter(user => user.roomId === roomId)
+          .map(user => user.userId)
+      });
 
-    // Store user information
-    userSockets.set(socket.id, { userId, room });
-
-    // Initialize room if it doesn't exist
-    if (!chatRooms.has(room)) {
-      chatRooms.set(room, new Set());
+      // Send recent messages
+      const messages = await Message.find({ room: roomId })
+        .sort({ timestamp: -1 })
+        .limit(50);
+      socket.emit("recentMessages", messages.reverse());
+    } catch (err) {
+      console.error("Error in joinRoom:", err);
+      socket.emit("error", "Failed to join room");
     }
-    chatRooms.get(room).add(userId);
-
-    // Notify others in the room
-    io.to(room).emit("userJoined", userId);
-
-    // Send current online users to the new participant
-    socket.emit("roomUsers", Array.from(chatRooms.get(room)));
-
-    console.log(`User ${userId} joined room: ${room}`);
   });
 
-  socket.on("message", ({ room, message }) => {
-    io.to(room).emit("message", {
-      ...message,
-      timestamp: new Date().toISOString()
-    });
-  });
-
-  socket.on("typing", ({ room, userId, isTyping }) => {
-    socket.to(room).emit("userTyping", { userId, isTyping });
-  });
-
-  socket.on("leaveRoom", ({ room, userId }) => {
-    handleUserLeaving(socket, room, userId);
+  socket.on("message", async (messageData) => {
+    try {
+      const { roomId, sender, content } = messageData;
+      const message = new Message({
+        room: roomId,
+        sender,
+        content,
+        timestamp: new Date()
+      });
+      await message.save();
+      io.to(roomId).emit("message", message);
+    } catch (err) {
+      console.error("Error sending message:", err);
+      socket.emit("error", "Failed to send message");
+    }
   });
 
   socket.on("disconnect", () => {
-    const userInfo = userSockets.get(socket.id);
-    if (userInfo) {
-      const { room, userId } = userInfo;
-      handleUserLeaving(socket, room, userId);
-      userSockets.delete(socket.id); // Fix: Prevent undefined reference
+    const userData = activeUsers.get(socket.id);
+    if (userData) {
+      const { roomId } = userData;
+      activeUsers.delete(socket.id);
+      
+      // Notify room about user leaving
+      io.to(roomId).emit("userLeft", {
+        userId: userData.userId,
+        onlineUsers: Array.from(activeUsers.values())
+          .filter(user => user.roomId === roomId)
+          .map(user => user.userId)
+      });
     }
-    console.log("User disconnected:", socket.id);
   });
 });
 
-// Helper function to handle user leaving
-function handleUserLeaving(socket, room, userId) {
-  if (chatRooms.has(room)) {
-    chatRooms.get(room).delete(userId);
-    if (chatRooms.get(room).size === 0) {
-      chatRooms.delete(room);
-    }
-    socket.to(room).emit("userLeft", userId);
-    socket.leave(room);
-    console.log(`User ${userId} left room: ${room}`);
-  }
-}
-
 // Health check endpoint
 app.get("/health", (req, res) => {
-  res.json({ status: "healthy", activeRooms: chatRooms.size });
+  res.json({ 
+    status: "healthy", 
+    activeUsers: activeUsers.size
+  });
 });
 
 const PORT = process.env.PORT || 4000;

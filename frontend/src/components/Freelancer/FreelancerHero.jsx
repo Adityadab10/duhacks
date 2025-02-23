@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight, MessageCircle, Share2, ArrowRight, Star, Sea
 import { useNavigate } from 'react-router-dom';
 import { auth } from '../../firebaseConfig';
 import axios from 'axios';
+import { useChat } from '../../context/ChatContext';
 
 const ScrollableCategories = ({ categories }) => {
   const scrollRef = useRef(null);
@@ -198,6 +199,9 @@ const FreelancerDashboard = () => {
     photoURL: null,
     email: ''
   });
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [userId, setUserId] = useState(null);
+  const { startChat } = useChat();
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
@@ -313,6 +317,11 @@ const FreelancerDashboard = () => {
 
   const handleSortChange = (e) => {
     setSortOption(e.target.value);
+  };
+
+  const handleStartChat = (companyId) => {
+    startChat(userId, companyId);
+    setIsChatOpen(true);
   };
 
   return (
@@ -434,6 +443,14 @@ const FreelancerDashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* Chat Drawer */}
+      <ChatDrawer
+        isOpen={isChatOpen}
+        onClose={() => setIsChatOpen(false)}
+        userId={userId}
+      />
+      <ChatList onChatSelect={handleStartChat} />
     </div>
   );
 };
