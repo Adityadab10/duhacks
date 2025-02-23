@@ -31,7 +31,6 @@ export default function Navbar() {
     }`}>
       <div className="container mx-auto px-4 lg:px-8">
         <div className="flex justify-between items-center h-20">
-          {/* Logo */}
           <Link
             to="/"
             className="flex items-center space-x-2 group"
@@ -42,7 +41,6 @@ export default function Navbar() {
             </span>
           </Link>
 
-          {/* Mobile Menu Button */}
           <button
             className="md:hidden p-2 hover:bg-gray-100/10 rounded-full transition-colors"
             onClick={() => setIsOpen(!isOpen)}
@@ -51,7 +49,6 @@ export default function Navbar() {
             {isOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
 
-          {/* Desktop Navigation */}
           <ul className="hidden md:flex md:items-center md:space-x-2">
             {navItems.map((item) => (
               <li key={item.path}>
@@ -68,7 +65,6 @@ export default function Navbar() {
                 </Link>
               </li>
             ))}
-            {/* CTA Button */}
             <li className="ml-4">
               <Link
                 to="/get-started"
@@ -80,7 +76,6 @@ export default function Navbar() {
           </ul>
         </div>
 
-        {/* Mobile Navigation */}
         <div
           className={`md:hidden transition-all duration-300 ease-in-out ${
             isOpen
@@ -98,16 +93,12 @@ export default function Navbar() {
                       ? "bg-blue-500 text-white"
                       : `${isScrolled ? "text-gray-600" : "text-gray-200"} hover:bg-gray-100/10`
                   }`}
-                  onClick={() => {
-                    setActiveItem(item.path);
-                    setIsOpen(false);
-                  }}
+                  onClick={() => setActiveItem(item.path)}
                 >
                   {item.label}
                 </Link>
               </li>
             ))}
-            {/* Mobile CTA Button */}
             <li className="pt-2">
               <Link
                 to="/get-started"
