@@ -10,6 +10,7 @@ const ScrollableCategories = ({ categories }) => {
   const scrollRef = useRef(null);
   const [showProgress, setShowProgress] = useState(false);
   const navigate = useNavigate();
+  
 
   const progressOptions = [
     { label: "Just Started", value: "20%" },
@@ -91,6 +92,10 @@ const FreelancerDashboard = () => {
   const [currentPage, setCurrentPage] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortOption, setSortOption] = useState('');
+  const [showChatList, setShowChatList] = useState(false);
+  const [selectedChat, setSelectedChat] = useState(null);
+  const { getUserChats } = useChat();
+
   const navigate = useNavigate();
   const [userData, setUserData] = useState({
     displayName: '',
@@ -349,13 +354,71 @@ console.log(firebaseUID,email,name,photoURL)
         </div>
       </div>
 
-      {/* Chat Drawer */}
-      <ChatDrawer
-        isOpen={isChatOpen}
-        onClose={() => setIsChatOpen(false)}
-        userId={userId}
-      />
-      <ChatList onChatSelect={handleStartChat} />
+      {/* Chat Components */}
+      <div style={{ position: 'fixed', bottom: '20px', left: '20px', zIndex: 9999 }}>
+      
+
+        <button
+          onClick={() => setShowChatList(!showChatList)}
+          style={{
+            width: '60px',
+            height: '60px',
+            backgroundColor: '#2563eb',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            border: 'none',
+            cursor: 'pointer',
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+          }}
+        >
+          <MessageCircle color="white" size={24} />
+        </button>
+
+        {showChatList && !selectedChat && (
+          <div className="absolute bottom-16 left-0 w-72 bg-white rounded-lg shadow-xl" style={{ zIndex: 9999 }}>
+            <div className="p-4 border-b">
+              <h3 className="font-semibold">Messages</h3>
+            </div>
+            <div className="p-2">
+              {activeChats.map((chat) => (
+                <button
+                  key={chat.id}
+                  onClick={() => handleStartChat(chat.id)}
+                  className="w-full flex items-center p-3 hover:bg-gray-50 rounded-lg"
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className="w-2 h-2 bg-green-500 rounded-full" />
+                    <div>
+                      <span className="font-medium">{chat.name}</span>
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {selectedChat && (
+          <div className="absolute bottom-16 left-0 w-80 bg-white rounded-t-lg shadow-xl" style={{ zIndex: 9999 }}>
+            <div className="flex items-center justify-between p-3 border-b">
+              <h3 className="font-semibold">
+                {activeChats.find(chat => chat.id === selectedChat)?.name || "Chat"}
+              </h3>
+              <button 
+                onClick={handleCloseChat}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="h-96">
+              <ChatApp userId={userId} partnerId={selectedChat} />
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

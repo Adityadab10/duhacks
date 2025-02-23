@@ -1,157 +1,142 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { Card, CardContent } from "@/components/ui/card";
-import Input from "@/components/ui/input";
-import Button from "@/components/ui/button";
-import { Search, ChevronLeft, ChevronRight, Briefcase, Users, BarChart, Clock } from "lucide-react";
-import JobBoard from "./JobBoard";
-import ChatList from "../ChatList";
+import React, { useState } from "react";
+import { X, MessageCircle, Briefcase, Users, BarChart, Clock } from 'lucide-react';
 import ChatApp from "../ChatApp";
 import { useChat } from "../../context/ChatContext";
 
 const CompanyDashboard = () => {
-  const navigate = useNavigate();
-  const [isChatOpen, setIsChatOpen] = useState(false);
-  const [userId, setUserId] = useState("company-1"); // Set a default ID for testing
-  const [selectedFreelancer, setSelectedFreelancer] = useState(null);
-  const { startChat } = useChat();
-  const [searchTerm, setSearchTerm] = useState("");
+  const { getUserChats } = useChat();
+  const [selectedChat, setSelectedChat] = useState(null);
+  const [showChatList, setShowChatList] = useState(false);
 
-  useEffect(() => {
-    // For testing, we'll use a fixed company ID
-    setUserId("company-1");
-  }, []);
+  const userId = 'company-1'; // Mock company ID
+  const activeChats = getUserChats(userId);
 
-  const handleStartChat = (freelancerId) => {
-    setSelectedFreelancer(freelancerId);
-    setIsChatOpen(true);
-    startChat("company-1", freelancerId); // Use the fixed ID
+  const handleStartChat = (partnerId) => {
+    setSelectedChat(partnerId);
+    setShowChatList(false);
+  };
+
+  const handleCloseChat = () => {
+    setSelectedChat(null);
   };
 
   const stats = [
     { title: "Active Jobs", value: "15", icon: Briefcase, color: "text-blue-500" },
     { title: "Total Applications", value: "126", icon: Users, color: "text-green-500" },
-    { title: "Hired Freelancers", value: "8", icon: BarChart, color: "text-purple-500" },
-    { title: "Avg. Time to Hire", value: "5 days", icon: Clock, color: "text-orange-500" }
-  ];
-
-  const activeProjects = [
-    { title: "Web Design", budget: "450$", applications: "15" },
-    { title: "App Design", budget: "300$", applications: "8" },
-    { title: "UI/UX Design", budget: "600$", applications: "12" }
+    { title: "Interviews", value: "12", icon: BarChart, color: "text-purple-500" },
+    { title: "Time to Hire", value: "14d", icon: Clock, color: "text-orange-500" }
   ];
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-blue-600">Company Dashboard</h1>
-          <div className="flex items-center gap-4">
-            <Button variant="outline">Home</Button>
-            <Button>Post a Job</Button>
-          </div>
+      {/* Hero Section */}
+      <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white py-12">
+        <div className="container mx-auto px-4">
+          <h1 className="text-4xl font-bold mb-4">Company Dashboard</h1>
+          <p className="text-xl">Manage your jobs and connect with talent</p>
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-8">
-        {/* Stats Section */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+      {/* Main Content */}
+      <div className="container mx-auto px-4 py-6 -mt-8">
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           {stats.map((stat, index) => (
-            <Card key={index} className="hover:shadow-lg transition-shadow">
-              <CardContent className="flex items-center p-6">
-                <div className={`p-3 rounded-full ${stat.color} bg-opacity-10 mr-4`}>
-                  <stat.icon className={`w-6 h-6 ${stat.color}`} />
-                </div>
+            <div key={index} className="bg-white p-6 rounded-lg shadow-sm border">
+              <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">{stat.title}</p>
-                  <p className="text-2xl font-bold">{stat.value}</p>
+                  <p className="text-sm font-medium text-gray-600">{stat.title}</p>
+                  <p className="text-2xl font-semibold text-gray-900">{stat.value}</p>
                 </div>
-              </CardContent>
-            </Card>
+                <stat.icon className={`w-8 h-8 ${stat.color}`} />
+              </div>
+            </div>
           ))}
         </div>
 
-        {/* Active Projects Slider */}
-        <Card className="mb-8">
-          <CardContent className="p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-semibold">Working On</h2>
-              <div className="flex gap-2">
-                <Button variant="outline" size="icon">
-                  <ChevronLeft className="w-4 h-4" />
-                </Button>
-                <Button variant="outline" size="icon">
-                  <ChevronRight className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {activeProjects.map((project, index) => (
-                <Card key={index} className="hover:shadow-lg transition-shadow">
-                  <CardContent className="p-4">
-                    <div className="flex justify-between items-center mb-2">
-                      <h3 className="font-semibold">{project.title}</h3>
-                      <span className="px-2 py-1 bg-gray-200 text-gray-700 rounded">{project.budget}</span>
-
-                    </div>
-                    <p className="text-sm text-gray-600">{project.applications} applications</p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Main Content Area */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Main Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Job Board Section */}
           <div className="lg:col-span-2">
-            <Card>
-              <CardContent className="p-6">
-                <JobBoard />
-              </CardContent>
-            </Card>
+            <div className="bg-white rounded-lg shadow-sm border p-6">
+              <h2 className="text-xl font-semibold mb-4">Active Job Listings</h2>
+              {/* Add your job listings here */}
+            </div>
           </div>
 
-          {/* Chat Section */}
-          <div className="lg:col-span-1">
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-xl font-semibold">Messages</h2>
-                </div>
-                
-                {/* Chat Interface */}
-                <div className="flex flex-col h-[600px]">
-                  {!isChatOpen ? (
-                    <ChatList 
-                      userId={userId}
-                      onChatSelect={handleStartChat}
-                      userRole="company"
-                    />
-                  ) : (
-                    <div>
-                      <button
-                        onClick={() => setIsChatOpen(false)}
-                        className="mb-4 text-sm text-blue-600 hover:text-blue-800 flex items-center"
-                      >
-                        <ChevronLeft className="w-4 h-4 mr-1" />
-                        Back to Messages
-                      </button>
-                      <ChatApp
-                        userId={userId}
-                        chatPartnerId={selectedFreelancer}
-                        userRole="company"
-                      />
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+          {/* Sidebar */}
+          <div className="space-y-6">
+            {/* Quick Stats */}
+            <div className="bg-white rounded-lg shadow-sm border p-6">
+              <h3 className="text-lg font-semibold mb-4">Quick Stats</h3>
+              {/* Add stats content */}
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Chat Button */}
+      <button
+        onClick={() => setShowChatList(!showChatList)}
+        className="fixed bottom-4 right-4 p-4 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-colors z-50"
+      >
+        <MessageCircle size={24} />
+      </button>
+
+      {/* Chat List Popup */}
+      {showChatList && !selectedChat && (
+        <div className="fixed bottom-20 right-4 w-72 bg-white rounded-lg shadow-lg z-50">
+          <div className="p-4 border-b">
+            <h3 className="font-semibold">Messages</h3>
+          </div>
+          <div className="p-2">
+            {activeChats.map((chat) => (
+              <button
+                key={chat.id}
+                onClick={() => handleStartChat(chat.id)}
+                className="w-full flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                <div className="flex items-center space-x-3">
+                  <div className="w-2 h-2 rounded-full bg-green-500" />
+                  <div className="flex flex-col items-start">
+                    <span className="font-medium">{chat.name}</span>
+                    {chat.lastMessage && (
+                      <span className="text-sm text-gray-500 truncate max-w-[200px]">
+                        {chat.lastMessage.content}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Chat Window */}
+      {selectedChat && (
+        <div className="fixed bottom-4 right-4 w-80 z-50">
+          <div className="bg-white rounded-t-lg shadow-lg">
+            <div className="flex items-center justify-between p-3 border-b">
+              <h3 className="font-semibold">
+                {activeChats.find(chat => chat.id === selectedChat)?.name || "Chat"}
+              </h3>
+              <button
+                onClick={handleCloseChat}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="h-96">
+              <ChatApp
+                userId={userId}
+                partnerId={selectedChat}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
