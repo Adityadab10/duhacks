@@ -1,4 +1,4 @@
-import React, { useRef, useRef, useState } from 'react';
+import React, { useRef,useState } from 'react';
 import { Eye, EyeOff, ArrowRight, Building2, Mail, Briefcase, Lock, Globe } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { auth, provider, signInWithPopup } from "../../firebaseConfig";

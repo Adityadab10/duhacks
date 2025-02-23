@@ -1,288 +1,291 @@
-import { useState, useEffect, useRef, useCallback } from "react";
-import { io } from "socket.io-client";
-import { Send, Smile, Paperclip, MoreVertical, Phone, Video, User } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { 
+  Mail, Phone, MapPin, Briefcase, 
+  DollarSign, Globe, FileText, CheckCircle,
+  X, Camera, Edit2, Save, AlertCircle, Github
+} from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
-// Create socket instance outside component to prevent recreation on re-renders
-const socket = io("http://localhost:4000", {
-  reconnection: true,
-  reconnectionAttempts: 5,
-  reconnectionDelay: 1000
-});
+const FreelancerProfile = ({ isNewUser = false }) => {
+  const navigate = useNavigate();
+  const [profile, setProfile] = useState(null);
+  const [firebaseUID, setFirebaseUID] = useState(null);
+  const [activeField, setActiveField] = useState(null);
+  const [editedValues, setEditedValues] = useState({});
+  const user = JSON.parse(localStorage.getItem("user"));
+  console.log(user.photoURL)
+  useEffect(() => {
+    const fetchFreelancerProfile = async () => {
+      try {
+        const user = JSON.parse(localStorage.getItem("user"));
+        if (!user) return;
 
-export default function ChatApp({ userId, chatRoom }) {
-  const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState("");
-  const [isConnected, setIsConnected] = useState(false);
-  const [typingUsers, setTypingUsers] = useState(new Set());
-  const [onlineUsers, setOnlineUsers] = useState(new Set());
-  const messagesEndRef = useRef(null);
-  const typingTimeoutRef = useRef(null);
-  const inputRef = useRef(null);
+        const response = await axios.get(`http://localhost:4000/api/profile/${user.uid}`);
+        setProfile(response.data);
+        setFirebaseUID(user.uid);
+        setEditedValues(response.data);
+      } catch (error) {
+        console.error("Error fetching freelancer profile:", error);
+      }
+    };
 
-  // Scroll to bottom of messages
-  const scrollToBottom = useCallback(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    fetchFreelancerProfile();
   }, []);
 
-  // Handle incoming messages
-  const handleMessage = useCallback((message) => {
-    setMessages(prev => [...prev, message]);
-    scrollToBottom();
-  }, [scrollToBottom]);
-
-  // Handle user typing status
-  const handleTyping = useCallback(() => {
-    socket.emit("typing", { room: chatRoom, userId, isTyping: true });
+  const calculateCompletion = () => {
+    if (!profile) return 0;
     
-    if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current);
-    }
-
-    typingTimeoutRef.current = setTimeout(() => {
-      socket.emit("typing", { room: chatRoom, userId, isTyping: false });
-    }, 1000);
-  }, [chatRoom, userId]);
-
-  // Send message
-  const sendMessage = useCallback(() => {
-    const trimmedInput = input.trim();
-    if (!trimmedInput || !isConnected) return;
-
-    const messageData = {
-      sender: userId,
-      content: trimmedInput,
-      timestamp: new Date().toISOString(),
+    const requiredFields = {
+      name: profile.name,
+      email: profile.email,
+      bio: profile.bio,
+      hourlyRate: profile.hourlyRate > 0,
+      github: profile.github,
+      portfolio: profile.portfolio,
+      skills: Array.isArray(profile.skills) && profile.skills.length > 0,
+      resume: profile.resume
     };
 
-    socket.emit("message", { room: chatRoom, message: messageData });
-    setInput("");
-    inputRef.current?.focus();
-
-    // Clear typing indicator
-    if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current);
-      socket.emit("typing", { room: chatRoom, userId, isTyping: false });
-    }
-  }, [input, isConnected, chatRoom, userId]);
-
-  // Setup socket event listeners
-  useEffect(() => {
-    const socket = io('http://localhost:4000', {
-      transports: ['websocket', 'polling'],
-    });
-
-    socket.on('connect', () => {
-      console.log('Connected to WebSocket server');
-      setSocket(socket);
-    });
-
-    socket.on('connect_error', (err) => {
-      console.error('Connection error:', err);
-      setError('Failed to connect to WebSocket server');
-    });
-
-    // Connection events
-    socket.on("connect", () => {
-      setIsConnected(true);
-      console.log("Connected to chat server");
-      socket.emit("joinRoom", { room: chatRoom, userId });
-    });
-
-    socket.on("disconnect", () => {
-      setIsConnected(false);
-      console.log("Disconnected from chat server");
-    });
-
-    // Chat events
-    socket.on("message", handleMessage);
-    socket.on("userTyping", ({ userId: typingUserId, isTyping }) => {
-      setTypingUsers(prev => {
-        const newSet = new Set(prev);
-        if (isTyping) {
-          newSet.add(typingUserId);
-        } else {
-          newSet.delete(typingUserId);
-        }
-        return newSet;
-      });
-    });
-
-    // User presence events
-    socket.on("userJoined", (joinedUserId) => {
-      setOnlineUsers(prev => new Set([...prev, joinedUserId]));
-    });
-
-    socket.on("userLeft", (leftUserId) => {
-      setOnlineUsers(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(leftUserId);
-        return newSet;
-      });
-      setTypingUsers(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(leftUserId);
-        return newSet;
-      });
-    });
-
-    socket.on("roomUsers", (users) => {
-      setOnlineUsers(new Set(users));
-    });
-
-    // Cleanup
-    return () => {
-      socket.off("connect");
-      socket.off("disconnect");
-      socket.disconnect();
-      socket.off("userTyping");
-      socket.off("userJoined");
-      socket.off("userLeft");
-      socket.off("roomUsers");
-      socket.emit("leaveRoom", { room: chatRoom, userId });
-    };
-  }, [chatRoom, userId, handleMessage]);
-
-  // Auto-scroll when new messages arrive
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages, scrollToBottom]);
-
-  const formatTime = (timestamp) => {
-    return new Date(timestamp).toLocaleTimeString([], { 
-      hour: '2-digit', 
-      minute: '2-digit' 
-    });
+    const completedFields = Object.values(requiredFields).filter(Boolean).length;
+    return Math.round((completedFields / Object.keys(requiredFields).length) * 100);
   };
 
-  if (error) {
-    return <div className="error">{error}</div>;
-  }
+  const handleFieldEdit = (field) => {
+    setActiveField(field);
+  };
+
+  const handleFieldSave = async (field) => {
+    try {
+      await axios.put(`http://localhost:4000/api/profile/${firebaseUID}`, editedValues);
+      setProfile(editedValues);
+      setActiveField(null);
+    } catch (error) {
+      console.error("Error updating profile:", error);
+    }
+  };
+
+  const handleChange = (field, value) => {
+    setEditedValues(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleSkillAdd = () => {
+    const skill = document.getElementById('skillInput').value.trim();
+    if (skill && (!editedValues.skills || !editedValues.skills.includes(skill))) {
+      setEditedValues(prev => ({
+        ...prev,
+        skills: [...(prev.skills || []), skill]
+      }));
+      document.getElementById('skillInput').value = '';
+    }
+  };
+
+  const handleSkillRemove = (skillToRemove) => {
+    setEditedValues(prev => ({
+      ...prev,
+      skills: prev.skills.filter(skill => skill !== skillToRemove)
+    }));
+  };
+
+  if (!profile) return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+    </div>
+  );
+
+  const EditableField = ({ field, value, label, icon: Icon, type = "text", editable = true }) => (
+    <div className="mb-6 relative group">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center text-gray-700 mb-2">
+          {Icon && <Icon size={18} className="mr-2" />}
+          <span className="font-medium">{label}</span>
+        </div>
+        {editable && (
+          <button
+            onClick={() => activeField === field ? handleFieldSave(field) : handleFieldEdit(field)}
+            className="text-sm px-3 py-1 rounded-md transition-colors hover:bg-gray-100"
+          >
+            {activeField === field ? <Save size={16} /> : <Edit2 size={16} />}
+          </button>
+        )}
+      </div>
+      {activeField === field && editable ? (
+        <input
+          type={type}
+          value={editedValues[field] || ''}
+          onChange={(e) => handleChange(field, e.target.value)}
+          className="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          autoFocus
+        />
+      ) : (
+        <div className="px-4 py-2 bg-gray-50 rounded-md">{value || 'Not set'}</div>
+      )}
+    </div>
+  );
 
   return (
-    <div className="flex flex-col h-[600px] max-w-2xl mx-auto bg-white rounded-xl shadow-xl overflow-hidden">
-      {/* Chat Header */}
-      <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white">
-        <div className="flex items-center space-x-4">
-          <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
-            <User className="w-6 h-6" />
-          </div>
-          <div>
-            <h2 className="font-semibold">Chat Room: {chatRoom}</h2>
-            <p className="text-sm text-blue-100">
-              {onlineUsers.size} online • {isConnected ? 
-                <span className="text-green-300">Connected</span> : 
-                <span className="text-red-300">Disconnected</span>
-              }
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center space-x-4">
-          <button className="p-2 hover:bg-blue-700 rounded-full transition-colors">
-            <Phone className="w-5 h-5" />
-          </button>
-          <button className="p-2 hover:bg-blue-700 rounded-full transition-colors">
-            <Video className="w-5 h-5" />
-          </button>
-          <button className="p-2 hover:bg-blue-700 rounded-full transition-colors">
-            <MoreVertical className="w-5 h-5" />
-          </button>
-        </div>
-      </div>
-
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-6 py-4 bg-gray-50">
-        {messages.map((msg, index) => (
-          <div
-            key={index}
-            className={`flex ${msg.sender === userId ? "justify-end" : "justify-start"} mb-4`}
-          >
-            <div
-              className={`max-w-[70%] ${
-                msg.sender === userId 
-                  ? "bg-blue-600 text-white rounded-l-xl rounded-tr-xl" 
-                  : "bg-white text-gray-800 rounded-r-xl rounded-tl-xl shadow-sm border border-gray-100"
-              } px-4 py-2`}
-            >
-              <div className="flex flex-col">
-                {msg.sender !== userId && (
-                  <span className="text-xs text-gray-500 mb-1">
-                    User {msg.sender}
-                  </span>
-                )}
-                <div className="flex items-end space-x-2">
-                  <p className="text-sm break-words">{msg.content}</p>
-                  <span className={`text-xs ${
-                    msg.sender === userId ? "text-blue-100" : "text-gray-400"
-                  } ml-2 whitespace-nowrap`}>
-                    {formatTime(msg.timestamp)}
-                  </span>
-                </div>
+    <div className="min-h-screen bg-gray-50 py-8 pt-24">
+      <div className="max-w-4xl mx-auto px-4">
+        {/* Profile Header */}
+        <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+          <div className="flex items-center space-x-6">
+            <div className="relative group">
+              <div className="w-24 h-24 rounded-full overflow-hidden">
+                <img
+                  src={profile.profilePicture || (user && user.photoURL) || "https://via.placeholder.com/100"}
+                  alt={profile.name || "Profile"}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                <Camera className="text-white" size={24} />
+              </div>
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-800">{profile.name}</h1>
+              <p className="text-gray-600">{profile.email}</p>
+              <div className="mt-2">
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                  <CheckCircle size={14} className="mr-1" /> Available for work
+                </span>
               </div>
             </div>
           </div>
-        ))}
-        {typingUsers.size > 0 && (
-          <div className="flex items-center space-x-2 text-gray-500 text-sm">
-            <div className="flex space-x-1">
-              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-100"></div>
-              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-200"></div>
+        </div>
+
+        {/* Completion Alert */}
+        {calculateCompletion() < 100 && (
+          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6 rounded-md">
+            <div className="flex items-center">
+              <AlertCircle className="text-yellow-400 mr-3" size={20} />
+              <p className="text-sm text-yellow-700">
+                Your profile is {calculateCompletion()}% complete. Complete your profile to increase visibility.
+              </p>
             </div>
-            <span>
-              {Array.from(typingUsers).map(id => `User ${id}`).join(", ")} 
-              {typingUsers.size === 1 ? "is" : "are"} typing...
-            </span>
           </div>
         )}
-        <div ref={messagesEndRef} />
-      </div>
 
-      {/* Input Area */}
-      <div className="px-6 py-4 bg-white border-t">
-        <div className="flex items-center space-x-4">
-          <button 
-            className="text-gray-500 hover:text-gray-700 transition-colors"
-            disabled={!isConnected}
-          >
-            <Paperclip className="w-5 h-5" />
-          </button>
-          <div className="flex-1 relative">
-            <input
-              ref={inputRef}
-              className={`w-full px-4 py-2 rounded-full ${
-                isConnected ? "bg-gray-100" : "bg-gray-200"
-              } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all`}
-              placeholder={isConnected ? "Type a message..." : "Connecting..."}
-              value={input}
-              onChange={(e) => {
-                setInput(e.target.value);
-                handleTyping();
-              }}
-              onKeyPress={(e) => e.key === "Enter" && !e.shiftKey && sendMessage()}
-              disabled={!isConnected}
-            />
-            <button 
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
-              disabled={!isConnected}
-            >
-              <Smile className="w-5 h-5" />
-            </button>
+        {/* Main Profile Content */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Left Column */}
+          <div className="space-y-6">
+            <div className="bg-white rounded-xl shadow-sm p-6">
+              <h2 className="text-lg font-semibold mb-4">Basic Information</h2>
+              <EditableField
+                field="email"
+                value={profile.email}
+                label="Email"
+                icon={Mail}
+                type="email"
+                editable={false}
+              />
+              <EditableField
+                field="portfolio"
+                value={profile.portfolio}
+                label="Portfolio URL"
+                icon={Globe}
+              />
+              <EditableField
+                field="github"
+                value={profile.github}
+                label="GitHub Profile"
+                icon={Github}
+              />
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm p-6">
+              <h2 className="text-lg font-semibold mb-4">Professional Details</h2>
+              <EditableField
+                field="hourlyRate"
+                value={`$${profile.hourlyRate}/hr`}
+                label="Hourly Rate"
+                icon={DollarSign}
+                type="number"
+              />
+              <EditableField
+                field="availability"
+                value={profile.availability}
+                label="Availability"
+                icon={Briefcase}
+              />
+            </div>
           </div>
-          <button
-            className={`p-2 rounded-full transition-colors ${
-              isConnected && input.trim()
-                ? "bg-blue-600 text-white hover:bg-blue-700"
-                : "bg-gray-200 text-gray-400 cursor-not-allowed"
-            }`}
-            onClick={sendMessage}
-            disabled={!isConnected || !input.trim()}
-          >
-            <Send className="w-5 h-5" />
-          </button>
+
+          {/* Right Column */}
+          <div className="space-y-6">
+            <div className="bg-white rounded-xl shadow-sm p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold">Skills</h2>
+                {activeField === 'skills' ? (
+                  <button
+                    onClick={() => handleFieldSave('skills')}
+                    className="text-sm px-3 py-1 rounded-md bg-blue-500 text-white hover:bg-blue-600"
+                  >
+                    Save Skills
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => handleFieldEdit('skills')}
+                    className="text-sm px-3 py-1 rounded-md hover:bg-gray-100"
+                  >
+                    <Edit2 size={16} />
+                  </button>
+                )}
+              </div>
+              
+              {activeField === 'skills' && (
+                <div className="mb-4">
+                  <div className="flex gap-2">
+                    <input
+                      id="skillInput"
+                      type="text"
+                      placeholder="Add a skill"
+                      className="flex-1 px-4 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                    <button
+                      onClick={handleSkillAdd}
+                      className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                    >
+                      Add
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex flex-wrap gap-2">
+                {editedValues.skills?.map((skill, index) => (
+                  <span
+                    key={index}
+                    className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-50 text-blue-700"
+                  >
+                    {skill}
+                    {activeField === 'skills' && (
+                      <button
+                        onClick={() => handleSkillRemove(skill)}
+                        className="ml-2 hover:text-blue-900"
+                      >
+                        <X size={14} />
+                      </button>
+                    )}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm p-6">
+              <h2 className="text-lg font-semibold mb-4">Resume</h2>
+              <EditableField
+                field="resume"
+                value={profile.resume}
+                label="Resume"
+                icon={FileText}
+              />
+            </div>
+          </div>
         </div>
       </div>
     </div>
   );
 };
 
-export default ChatApp;
+export default FreelancerProfile;
